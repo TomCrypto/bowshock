@@ -5,6 +5,7 @@
 /// @brief Hardware abstraction layer for byte-oriented interfaces.
 
 #include <rtl/waitable.hpp>
+#include <rtl/buffer.hpp>
 
 namespace hal {
 
@@ -14,12 +15,16 @@ public:
   /// @brief Reads \c size bytes from the interface into \c data.
   ///
   /// @remarks The \c data buffer must remain valid until the waitable has completed.
-  rtl::waitable<typename T::waitable_type> read(std::size_t size, void* data);
+  auto read(rtl::buffer buffer) {
+    return static_cast<T*>(this)->read(buffer);
+  }
 
   /// @brief Writes \c size bytes from \c data to the interface.
   ///
   /// @remarks The \c data buffer must remain valid until the waitable has completed. 
-  rtl::waitable<typename T::waitable_type> write(const void* data, std::size_t size);
+  auto write(rtl::buffer buffer) {
+    return static_cast<T*>(this)->write(buffer);
+  }
 };
 
 }

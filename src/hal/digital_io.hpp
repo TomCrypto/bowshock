@@ -19,7 +19,7 @@ template <class T>
 class digital_input
 {
 public:
-  logic_level state() {
+  auto state() {
     return static_cast<T*>(this)->state();
   }
 };
@@ -28,15 +28,15 @@ template <class T>
 class digital_output
 {
 public:
-  void drive_low() {
+  auto drive_low() {
     static_cast<T*>(this)->drive_low();
   }
 
-  void drive_high() {
+  auto drive_high() {
     static_cast<T*>(this)->drive_high();
   }
 
-  void drive(logic_level level) {
+  auto drive(logic_level level) {
     if (level == logic_level::low) {
       drive_low();
     } else {

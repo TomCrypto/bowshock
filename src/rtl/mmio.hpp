@@ -24,7 +24,7 @@ namespace rtl {
 ///
 /// @remarks It is recommended to use \c 0b notation when writing masks for clarity.
 template <typename T> struct mmio {
-private:
+protected:
   static constexpr auto all_bits = std::numeric_limits<T>::max();
 
 public:
@@ -37,29 +37,29 @@ public:
   /// @brief Clears all bits in the mask from the register. This is equivalent to \c write<mask>(all bits zero).
   ///
   /// @remarks If your mask is all-ones, use the non-templated \c clear() function instead to avoid a readback.
-  template <T mask> void clear() {
+  template <T mask> auto clear() {
     *reg &= ~mask;
   }
 
   /// @brief Sets all bits of the register to zero.
-  void clear() {
+  auto clear() {
     *reg = 0;
   }
 
   /// @brief Writes all bits in the mask to the register. This is equivalent to \c write<mask>(all bits one).
   ///
   /// @remarks If your mask is all-ones, use the non-templated \c set() function instead to avoid a readback.
-  template <T mask> void set() {
+  template <T mask> auto set() {
     *reg |= mask;
   }
 
   /// @brief Sets all bits of the register to one.
-  void set() {
+  auto set() {
     *reg = all_bits;
   }
 
   /// @brief Toggles the register's bits.
-  template <T mask = all_bits> void toggle() {
+  template <T mask = all_bits> auto toggle() {
     *reg ^= mask;
   }
 
@@ -67,7 +67,7 @@ public:
   ///
   /// @warning If the mask does not fully cover the bits being written, the behaviour is undefined (and an assert will
   ///          be thrown if enabled). To allow such operations, use the \c safe_write() function instead.
-  template <T mask> void write(T bits) {
+  template <T mask> auto write(T bits) {
     rtl::assert(!(bits & ~mask), TRACE("attempted to write bits outside mask specification to mmio register"));
 
     *reg = bits | (*reg & ~mask);
@@ -77,24 +77,64 @@ public:
   ///
   /// @remarks This function will mask the bits of the argument with the mask prior to writing them. If you know that
   ///          the argument is fully covered by the mask already, call \c write() directly to avoid this overhead.
-  template <T mask> void safe_write(T bits) {
+  template <T mask> auto safe_write(T bits) {
     write(bits & mask);
   }
 
   /// @brief Overwrites the entire register with the specified bits.
-  void write(T bits) {
+  auto write(T bits) {
     *reg = bits;
   }
 
-  static inline int foo = 42;
-
   /// @brief Reads out the register's bits.
-  template <T mask = all_bits> T read() const {
+  template <T mask = all_bits> auto read() const {
     return *reg & mask;
+  }
+
+  /// @brief Returns whether any of the bits in the mask are set.
+  template <T mask = all_bits> auto any() const {
+    return (*reg & mask) != 0;
+  }
+
+  /// @brief Returns whether all of the bits in the mask are set.
+  template <T mask = all_bits> auto all() const {
+    return (*reg & mask) == mask;
+  }
+
+  /// @brief Returns whether none of the bits in the mask are set.
+  template <T mask = all_bits> auto none() const {
+    return (*reg & mask) == 0;
   }
 
 private:
   volatile T* reg;
 };
+
+/// @brief A read-only version of mmio. You can still access the write methods explicitly.
+template <typename T> struct mmio_ro : public mmio<T> {
+  using mmio<T>::mmio;
+
+  template <T mask> auto clear()                      = delete;
+  auto clear()                                        = delete;
+  template <T mask> auto set()                        = delete;
+  auto set()                                          = delete;
+  template <T mask = mmio<T>::all_bits> auto toggle() = delete;
+  template <T mask> auto write(T bits)                = delete;
+  template <T mask> auto safe_write(T bits)           = delete;
+  auto write(T bits)                                  = delete;
+};
+
+/// @brief A write-only version of mmio. You can still access the read methods explicitly.
+template <typename T> struct mmio_wo : public mmio<T> {
+  using mmio<T>::mmio;
+
+  template <T mask = mmio<T>::all_bits> auto read() const = delete;
+  template <T mask = mmio<T>::all_bits> auto any() const  = delete;
+  template <T mask = mmio<T>::all_bits> auto all() const  = delete;
+  template <T mask = mmio<T>::all_bits> auto none() const = delete;
+};
+
+/// @brief Alias of mmio for consistency with mmio_ro and mmio_wo.
+template <typename T> using mmio_rw = mmio<T>;
 
 }

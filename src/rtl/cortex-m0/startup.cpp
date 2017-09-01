@@ -3,7 +3,7 @@
 namespace hal
 {
 
-extern void startup(const char* assert_message);
+[[noreturn]] extern void startup(const char* assert_message);
 
 }
 
@@ -18,12 +18,10 @@ static const char* clear_assert_message() {
   return message;
 }
 
-extern "C" void rtl_startup() {
+extern "C" [[noreturn]] void rtl_startup() {
   // TODO: any other setup (stack, NVIC, CPU fault detection)
   
   hal::startup(clear_assert_message());
 }
-
-
 
 }

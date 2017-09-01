@@ -31,19 +31,19 @@ public:
   using options = typename physical_io_t::digital_input_options;
 
   basic_digital_input(termination termination, options options = options::none)
-    : physical_io(physical_io_t::function::gpio, termination, options) {
-    gpio_dir.template clear<port_mask>();
+    : physical_io(termination, options) {
+    DIR().template clear<port_mask>();
   }
 
   auto state() {
-    return gpio_data.read() ? hal::logic_level::high : hal::logic_level::low;
+    return DATA().read() ? hal::logic_level::high : hal::logic_level::low;
   }
 
 private:
   static constexpr auto port_mask = 1 << port_no;
 
-  rtl::mmio<rtl::u32> gpio_data{gpio_ptr + 4 * port_mask};
-  rtl::mmio<rtl::u32> gpio_dir{gpio_ptr + 0x8000};
+  static auto DATA() { return rtl::mmio<rtl::u32>{gpio_ptr + 4 * port_mask}; }
+  static auto DIR() { return rtl::mmio<rtl::u32>{gpio_ptr + 0x8000}; }
 };
 
 template <pin pin, rtl::uptr gpio_ptr, std::size_t port_no>
@@ -56,24 +56,24 @@ public:
   using options = typename physical_io_t::digital_output_options;
 
   basic_digital_output(hal::logic_level initial_level, options options = options::none)
-    : physical_io(physical_io_t::function::gpio, options) {
+    : physical_io(options) {
     this->drive(initial_level);
-    gpio_dir.template set<port_mask>();
+    DIR().template set<port_mask>();
   }
 
-  void drive_low() {
-    gpio_data.clear();
+  auto drive_low() {
+    DATA().clear();
   }
 
-  void drive_high() {
-    gpio_data.set();
+  auto drive_high() {
+    DATA().set();
   }
 
 private:
   static constexpr auto port_mask = 1 << port_no;
 
-  rtl::mmio<rtl::u32> gpio_data{gpio_ptr + 4 * port_mask};
-  rtl::mmio<rtl::u32> gpio_dir{gpio_ptr + 0x8000};
+  static auto DATA() { return rtl::mmio<rtl::u32>{gpio_ptr + 4 * port_mask}; }
+  static auto DIR() { return rtl::mmio<rtl::u32>{gpio_ptr + 0x8000}; }
 };
 
 }

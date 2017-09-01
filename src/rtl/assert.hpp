@@ -22,7 +22,7 @@ void assert(bool condition, const char* message) {}
 #define TRACE(what) (__FILE__ ":" STRINGIZE(__LINE__) ": " what)
 
 /// @brief Issues an assert condition and terminates execution if the condition is false.
-inline void assert(bool condition, const char* message) {
+inline auto assert(bool condition, const char* message) {
   extern nvram const char* assert_message;
 
   if (!condition) {

@@ -9,7 +9,7 @@ cppflags = proc do
   option :Wpedantic
   option :pedantic
   option :g
-  option :O3
+  option :O2
 end
 
 software 'main', depends: ['hal'] do
@@ -42,8 +42,8 @@ hardware 'hal', targets: :lpc1114 do
     import 'src/rtl/cortex-m0/**/*.S'
   end
 
-  linker 'arm-none-eabi', isa: 'armv6-m', cpu: 'cortex-m0', opt: 3 do
-    script 'src/hal/lpc1114/layout.ld'
+  linker 'arm-none-eabi', isa: 'armv6-m', cpu: 'cortex-m0', opt: 2 do
+    script 'src/hal/lpc1100/layout.ld'
     option :static
     option :nostdlib
   end

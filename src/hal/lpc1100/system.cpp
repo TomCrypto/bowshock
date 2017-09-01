@@ -25,7 +25,7 @@ static reset_context determine_reset_event() {
    }
 }
 
-static void startup(const char* message) {
+[[noreturn]] static void startup(const char* message) {
   auto context = determine_reset_event();
 
   if (context.event == reset_event::software) {
@@ -43,7 +43,7 @@ static void startup(const char* message) {
 namespace hal
 {
 
-void startup(const char* message) {
+[[noreturn]] void startup(const char* message) {
   hal::lpc1100::startup(message);
 }
 

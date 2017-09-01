@@ -18,36 +18,45 @@ namespace rtl
 /// @remarks The default void specialization is only intended for easy access to static member helper functions.
 template <typename T = void> struct waitable {
 public:
+  // TODO: move this elsewhere (e.g. rtl::wait_state)
   enum class status {
     pending,
     complete,
     failed
   };
 
+  /// @brief Returns whether this waitable is complete.
   auto is_complete() const {
-    return static_cast<T*>(this)->is_complete();
+    return static_cast<const T*>(this)->is_complete();
   }
 
+  /// @brief Returns whether this waitable is failed.
   auto is_failed() const {
-    return static_cast<T*>(this)->is_failed();
+    return static_cast<const T*>(this)->is_failed();
   }
 
+  /// @brief Returns whether this waitable is pending.
   auto is_pending() const {
-    return static_cast<T*>(this)->is_pending();
+    return static_cast<const T*>(this)->is_pending();
   }
 
-  void wait() const {
-    waitable::wait_all(*this);
+  /// @brief Waits for this waitable to complete or fail.
+  auto wait() const {
+    waitable::wait_all(*static_cast<const T*>(this));
   }
+
+  // TODO: replace wfi with the correct "wait for interrupt/event" intrinsic for the platform
+  // e.g. rtl::wait or rtl::pause
+  // TODO: implement a buffer abstraction (possibly with wraparound support?)
 
   /// @brief Waits for all of the waitables passed to complete or fail.
-  template <typename... waitables> static void wait_all(waitables... list) {
-    while (!wait_all_inner(std::forward<waitables>(list)...)) { __WFI(); }
+  template <typename... waitables> static auto wait_all(waitables... list) {
+    while (!wait_all_inner(std::forward<waitables>(list)...)) { __asm__("wfi"); }
   }
 
   /// @brief Waits for any of the waitables passed to complete or fail.
-  template <typename... waitables> static void wait_any(waitables... list) {
-    while (!wait_any_inner(std::forward<waitables>(list)...)) { __WFI(); }
+  template <typename... waitables> static auto wait_any(waitables... list) {
+    while (!wait_any_inner(std::forward<waitables>(list)...)) { __asm__("wfi"); }
   }
 
 private:
@@ -70,6 +79,25 @@ private:
   static auto wait_any_inner(const waitable<T2>& head, waitables... tail) {
     return !head.is_pending() || wait_any_inner(std::forward<waitables>(tail)...);
   }
+};
+
+struct interrupt_waitable : public waitable<interrupt_waitable> {
+  interrupt_waitable(const waitable<>::status* status) : status(status) {}
+
+  auto is_complete() const {
+    return *status == rtl::waitable<>::status::complete;
+  }
+
+  auto is_failed() const {
+    return *status == rtl::waitable<>::status::failed;
+  }
+
+  auto is_pending() const {
+    return *status == rtl::waitable<>::status::pending;
+  }
+
+private:
+  const waitable<>::status* status;
 };
 
 }

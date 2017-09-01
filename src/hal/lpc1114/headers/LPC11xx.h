@@ -339,7 +339,7 @@ typedef struct
   };
   union {
   __IO uint32_t  DLM;                   /*!< Offset: 0x004 Divisor Latch MSB (R/W) */
-  __IO uint32_t  IER;                   /*!< Offset: 0x000 Interrupt Enable Register (R/W) */
+  __IO uint32_t  IER;                   /*!< Offset: 0x004 Interrupt Enable Register (R/W) */
   };
   union {
   __I  uint32_t  IIR;                   /*!< Offset: 0x008 Interrupt ID Register (R/ ) */

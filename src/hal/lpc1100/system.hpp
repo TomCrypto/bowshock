@@ -52,4 +52,4 @@ struct reset_context {
 }
 
 /// @brief This function must be implemented by the application and is called when the device comes out of reset.
-extern void main(const hal::lpc1100::reset_context& context);
+[[noreturn]] extern void main(const hal::lpc1100::reset_context& context);
