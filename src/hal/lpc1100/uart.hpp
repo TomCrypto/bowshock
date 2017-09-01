@@ -12,27 +12,10 @@
 // TODO: for the clocks, potentially the UART constructor could take a "clock" object that it can attach the UART clock
 //       to, and also query to obtain its actual clock rate, so that the correct UART parameters can be constructed.
 
-#define IER_RBR         (0x01<<0)
-#define IER_THRE        (0x01<<1)
-#define IER_RLS         (0x01<<2)
-
-#define IIR_PEND        0x01
-#define IIR_RLS         0x03
-#define IIR_RDA         0x02
-#define IIR_CTI         0x06
-#define IIR_THRE        0x01
-#define LSR_RDR         (0x01<<0)
-#define LSR_OE          (0x01<<1)
-#define LSR_PE          (0x01<<2)
-#define LSR_FE          (0x01<<3)
-#define LSR_BI          (0x01<<4)
-#define LSR_THRE        (0x01<<5)
-#define LSR_TEMT        (0x01<<6)
-#define LSR_RXFE        (0x01<<7)
-
 namespace hal::lpc1100 {
 
 template <pin tx, pin rx> class uart : public hal::byte_interface<uart<tx, rx>> {
+  friend void interrupt::handlers::uart(void);
 private:
   using tx_pin_t = typename hal::lpc1100::physical_io<tx>;
   using rx_pin_t = typename hal::lpc1100::physical_io<rx>;
@@ -142,6 +125,7 @@ public:
     current = nullptr;
   }
 
+private:
   auto interrupt() {
     switch (IIR().template read<0b1110>()) {
       case 0b0010: /* THRE */
@@ -173,7 +157,6 @@ public:
     }
   }
 
-private:
   auto flush_rx_queue() {
     FCR().template set<0b10>();
   }
