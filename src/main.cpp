@@ -8,14 +8,9 @@
 #include <hal/lpc1100/uart.hpp>
 #include <rtl/assert.hpp>
 #include <hal/lpc1100/interrupt.hpp>
-
-enum ClockSource {
-  ExternalCrystal,
-  InternalOscillator
-};
+#include <hal/lpc1100/clock.hpp>
 
 static void flash_access_time(uint32_t frequency);
-static uint32_t pll_start(enum ClockSource source, uint32_t crystal, uint32_t frequency);
 
 static void flash_access_time(uint32_t frequency)
 {
@@ -33,56 +28,6 @@ static void flash_access_time(uint32_t frequency)
     flashcfg_register &= ~(FLASHCFG_FLASHTIM_mask << FLASHCFG_FLASHTIM_bit);    // mask the FLASHTIM field
     flashcfg_register |= access_time << FLASHCFG_FLASHTIM_bit;  // use new FLASHTIM value
     FLASHCFG = flashcfg_register;           // save the new value back to the register
-}
-
-static uint32_t pll_start(enum ClockSource source, uint32_t crystal, uint32_t frequency)
-{
-    uint32_t m, p = 0, fcco;
-
-    flash_access_time(frequency);           // configure flash access time first
-
-    // SYSOSCCTRL_FREQRANGE should be 0 for crystals in range 1 - 20MHz
-    // SYSOSCCTRL_FREQRANGE should be 1 for crystals in range 15 - 25MHz
-    if (crystal < 17500000)                 // divide the ranges on 17.5MHz then
-        LPC_SYSCON->SYSOSCCTRL = 0;         // "lower speed" crystals
-    else
-        LPC_SYSCON->SYSOSCCTRL = SYSOSCCTRL_FREQRANGE;  // "higher speed" crystals
-
-    LPC_SYSCON->PDRUNCFG &= ~PDRUNCFG_SYSOSC_PD;    // power-up main oscillator
-
-    if (source == ExternalCrystal) {
-        LPC_SYSCON->SYSPLLCLKSEL = SYSPLLCLKSEL_SEL_SYSOSC;
-    } else {
-        LPC_SYSCON->SYSPLLCLKSEL = SYSPLLCLKSEL_SEL_IRC;
-    }
-
-    LPC_SYSCON->SYSPLLCLKUEN = 0;           // confirm the change of PLL input clock by toggling the...
-    LPC_SYSCON->SYSPLLCLKUEN = SYSPLLUEN_ENA;   // ...ENA bit in LPC_SYSCON->SYSPLLCLKUEN register
-
-    // calculate PLL parameters
-    m = frequency / crystal;                // M is the PLL multiplier
-    fcco = m * crystal * 2;                 // FCCO is the internal PLL frequency
-
-    frequency = crystal * m;
-
-    while (fcco < 156000000)
-    {
-        fcco *= 2;
-        p++;                                // find P which gives FCCO in the allowed range (over 156MHz)
-    }
-
-    LPC_SYSCON->SYSPLLCTRL = ((m - 1) << SYSPLLCTRL_MSEL_bit) | (p << SYSPLLCTRL_PSEL_bit); // configure PLL
-    LPC_SYSCON->PDRUNCFG &= ~PDRUNCFG_SYSPLL_PD; // power-up PLL
-
-    while (!(LPC_SYSCON->SYSPLLSTAT & SYSPLLSTAT_LOCK));    // wait for PLL lock
-
-    LPC_SYSCON->MAINCLKSEL = MAINCLKSEL_SEL_PLLOUT; // select PLL output as the main clock
-    LPC_SYSCON->MAINCLKUEN = 0;             // confirm the change of main clock by toggling the...
-    LPC_SYSCON->MAINCLKUEN = MAINCLKUEN_ENA;    // ...ENA bit in LPC_SYSCON->MAINCLKUEN register
-
-    LPC_SYSCON->SYSAHBCLKDIV = 1;           // set AHB clock divider to 1
-
-    return frequency;
 }
 
 static void system_init(void)
@@ -121,24 +66,15 @@ auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
 [[noreturn]] void main(const dev::reset_context& context) {
   system_init();
 
-  /*
-  // configure the PLL to generate a 48MHz clock
-  hal::clock<hal::pll>::configure(hal::source::irc,
-                                  48000000);
-  // configure the main clock to use the PLL as a source
-  hal::clock<hal::main>::set_source(hal::pll);
-  // configure CLKOUT to use the PLL as a source
-  hal::clock<hal::clkout>::set_source(hal::pll);
-  // and give it a x4 divider to get a 12MHz output clock
-  hal::clock<hal::clkout>::set_divider(4);
-  // how to encapsulate the above nicely?
+  auto frequency = 48000000;
+  flash_access_time(frequency);           // configure flash access time first
 
+  // set the main clock
+  dev::clock<dev::clock_source::pll_in>::set_source(dev::clock_source::irc);
+  dev::clock<dev::clock_source::pll_out>::enable(frequency);
+  dev::clock<dev::clock_source::main>::set_source(dev::clock_source::pll_out);
 
-  auto pll = hal::clock<hal::pll>(hal::clock_source::irc,
-                                  48000000);
-  */
-
-  pll_start(InternalOscillator, 12000000, 48000000);
+  LPC_SYSCON->SYSAHBCLKDIV = 1;           // set AHB clock divider to 1
 
   auto uart = dev::uart0(115200);
 
