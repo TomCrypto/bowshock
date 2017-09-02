@@ -111,6 +111,13 @@ void assert_signal() {
   }
 }
 
+auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
+  return [buffer, &length, pattern](const rtl::u8& data) {
+    buffer[length++] = data;
+    return data == pattern;
+  };
+}
+
 [[noreturn]] void main(const dev::reset_context& context) {
   system_init();
 
@@ -133,7 +140,7 @@ void assert_signal() {
 
   pll_start(InternalOscillator, 12000000, 48000000);
 
-  auto uart = dev::uart0(9600);
+  auto uart = dev::uart0(115200);
 
   if (context.event == dev::reset_event::assert) {
     std::size_t length = 0;
@@ -144,11 +151,12 @@ void assert_signal() {
         }
     }
 
-    uart.write({const_cast<char*>(context.assert.message), length - 1}).wait();
+    //uart.write({const_cast<char*>(context.assert.message), length - 1}).wait();
 
     assert_signal();
   }
 
+  #if 0
   const char map[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
   char buf[8];
 
@@ -162,6 +170,7 @@ void assert_signal() {
   }
 
   uart.write({buf, sizeof(buf)}).wait();
+  #endif
 
   auto output = output_pin(hal::logic_level::high);
   auto input = input_pin(input_pin::termination::pullup);
@@ -170,13 +179,25 @@ void assert_signal() {
   //auto uart = dev::uart<dev::pin::PIO1_7, dev::pin::PIO1_6>(/* uart settings */);
 
   while (true) {
-    char buffer[1];
+    char buffer[32];
+    std::size_t pos = 0;
+    std::size_t offset = 0;
 
-    auto read_wait = uart.read({buffer, sizeof(buffer)});
-    read_wait.wait();
+    /*auto read_waitable = uart.read([&](const rtl::u8& data) {
+      buffer[pos++] = data;
+      return data == '\r';
+    });*/
+    auto read_waitable = uart.read(read_until(buffer, pos, '\r'));
+    read_waitable.wait();
 
-    auto write_wait = uart.write({buffer, sizeof(buffer)});
-    write_wait.wait();
+    uart.write([&](rtl::u8& data) {
+      if (offset == pos) {
+          return true;
+      }
+
+      data = buffer[offset++];
+      return false;
+    }).wait();
   }
 
   /*
@@ -187,7 +208,6 @@ void assert_signal() {
   }
   */
 
-  auto foo = [&](){
   while (true) {
     for (auto i = 0; i < 0x1FFFFF; ++i) {
         output.drive_low();
@@ -202,7 +222,5 @@ void assert_signal() {
 
     rtl::assert(input.state() == hal::logic_level::high, "fuck");
     */
-}};
-
-foo();
+  }
 }

@@ -31,4 +31,21 @@ namespace rtl {
   using i32  = int32_t;
   using i16  = int16_t;
   using i8   = int8_t;
+
+  class noncopyable {
+  protected:
+    noncopyable() = default;
+    ~noncopyable() = default;
+    noncopyable(noncopyable&& other) = default;
+    noncopyable& operator=(noncopyable&&) = default;
+  private:
+    noncopyable(const noncopyable& other) = delete;
+    noncopyable& operator=(const noncopyable&) = delete;
+  };
+
+  class nonmoveable : private noncopyable {
+  private:
+    nonmoveable(nonmoveable&& other) = delete;
+    nonmoveable& operator=(nonmoveable&&) = delete;
+  };
 }

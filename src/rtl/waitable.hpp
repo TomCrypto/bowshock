@@ -50,12 +50,12 @@ public:
   // TODO: implement a buffer abstraction (possibly with wraparound support?)
 
   /// @brief Waits for all of the waitables passed to complete or fail.
-  template <typename... waitables> static auto wait_all(waitables... list) {
+  template <typename... waitables> static auto wait_all(waitables&&... list) {
     while (!wait_all_inner(std::forward<waitables>(list)...)) { __asm__("wfi"); }
   }
 
   /// @brief Waits for any of the waitables passed to complete or fail.
-  template <typename... waitables> static auto wait_any(waitables... list) {
+  template <typename... waitables> static auto wait_any(waitables&&... list) {
     while (!wait_any_inner(std::forward<waitables>(list)...)) { __asm__("wfi"); }
   }
 
@@ -66,7 +66,7 @@ private:
   }
 
   template <typename T2, template <typename> class waitable, typename... waitables>
-  static auto wait_all_inner(const waitable<T2>& head, waitables... tail) {
+  static auto wait_all_inner(const waitable<T2>& head, waitables&&... tail) {
     return !head.is_pending() && wait_all_inner(std::forward<waitables>(tail)...);
   }
 
@@ -76,28 +76,9 @@ private:
   }
 
   template <typename T2, template <typename> class waitable, typename... waitables>
-  static auto wait_any_inner(const waitable<T2>& head, waitables... tail) {
+  static auto wait_any_inner(const waitable<T2>& head, waitables&&... tail) {
     return !head.is_pending() || wait_any_inner(std::forward<waitables>(tail)...);
   }
-};
-
-struct interrupt_waitable : public waitable<interrupt_waitable> {
-  interrupt_waitable(const waitable<>::status* status) : status(status) {}
-
-  auto is_complete() const {
-    return *status == rtl::waitable<>::status::complete;
-  }
-
-  auto is_failed() const {
-    return *status == rtl::waitable<>::status::failed;
-  }
-
-  auto is_pending() const {
-    return *status == rtl::waitable<>::status::pending;
-  }
-
-private:
-  const waitable<>::status* status;
 };
 
 }

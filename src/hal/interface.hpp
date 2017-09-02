@@ -5,25 +5,28 @@
 /// @brief Hardware abstraction layer for byte-oriented interfaces.
 
 #include <rtl/waitable.hpp>
-#include <rtl/buffer.hpp>
+#include <rtl/functional.hpp>
 
 namespace hal {
 
 template <class T>
 class byte_interface {
 public:
-  /// @brief Reads \c size bytes from the interface into \c data.
+  /// @brief Reads from the interface in the context of \c context. Returns a waitable.
   ///
-  /// @remarks The \c data buffer must remain valid until the waitable has completed.
-  auto read(rtl::buffer buffer) {
-    return static_cast<T*>(this)->read(buffer);
+  /// @remarks The context must be a functor taking a const reference to an \c rtl::u8 and returning the new status of
+  ///          the waitable. The read operation will continue until the returned status is no longer pending.
+  template <typename T2> auto read(T2 context) {
+    return static_cast<T*>(this)->read(context);
   }
 
-  /// @brief Writes \c size bytes from \c data to the interface.
+  /// @brief Writes to the interface in the context of \c context. Returns a waitable.
   ///
-  /// @remarks The \c data buffer must remain valid until the waitable has completed. 
-  auto write(rtl::buffer buffer) {
-    return static_cast<T*>(this)->write(buffer);
+  /// @remarks The context must be a functor taking a reference to an \c rtl::u8 and returning the new status of the
+  ///          waitable. The write operation will continue until the returned status is no longer pending. If the
+  ///          returned status is \c pending, then the \c rtl::u8 passed will be written out.
+  template <typename T2> auto write(T2 context) {
+    return static_cast<T*>(this)->write(context);
   }
 };
 

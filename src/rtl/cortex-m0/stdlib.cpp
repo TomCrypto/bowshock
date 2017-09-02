@@ -11,3 +11,8 @@ extern "C" void *memcpy(void* a, const void* b, std::size_t n)
 
     return a;
 }
+
+extern "C" void __aeabi_memcpy (void *dest, const void *src, size_t n)
+{
+memcpy (dest, src, n);
+}
