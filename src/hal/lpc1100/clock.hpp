@@ -94,10 +94,10 @@ public:
     auto frequency_in = clock<clock_source::pll_in>::frequency();
 
     // calculate PLL parameters
-    auto m = frequency / frequency_in.ticks_per_second();                // M is the PLL multiplier
-    auto fcco = m * frequency_in.ticks_per_second() * 2;                 // FCCO is the internal PLL frequency
+    auto m = frequency / frequency_in.hz();                // M is the PLL multiplier
+    auto fcco = m * frequency_in.hz() * 2;                 // FCCO is the internal PLL frequency
 
-    frequency = frequency_in.ticks_per_second() * m;
+    frequency = frequency_in.hz() * m;
 
     auto p = 0;
 
