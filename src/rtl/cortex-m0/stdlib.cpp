@@ -12,7 +12,31 @@ extern "C" void *memcpy(void* a, const void* b, std::size_t n)
     return a;
 }
 
+extern "C" int memcmp(const void* a, const void* b, std::size_t n)
+{
+    const uint8_t* ptrA = (const uint8_t*)a;
+    const uint8_t* ptrB = (const uint8_t*)b;
+
+    while (n--) {
+        char x = *(ptrA++);
+        char y = *(ptrB++);
+
+        if (x < y) {
+            return -1;
+        } else if (x > y) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 extern "C" void __aeabi_memcpy (void *dest, const void *src, size_t n)
 {
 memcpy (dest, src, n);
+}
+
+
+extern "C" void atexit() {
+  return;
 }

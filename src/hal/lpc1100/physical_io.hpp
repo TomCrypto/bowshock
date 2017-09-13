@@ -81,9 +81,23 @@ namespace {
   };
 };
 
+namespace detail {
+  inline auto SYSAHBCLKCTRL() { return rtl::mmio<rtl::u32>{0x40048080}; }
+
+  struct iocon_mmio : public rtl::mmio<rtl::u32> {
+    iocon_mmio(rtl::uptr addr) : rtl::mmio<rtl::u32>(addr) {
+      SYSAHBCLKCTRL().template set_bit<16>();
+    }
+
+    ~iocon_mmio() {
+      SYSAHBCLKCTRL().template clear_bit<16>();
+    }
+  };
+};
+
 template <> class physical_io<pin::PIO0_0> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004400C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004400C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -100,7 +114,7 @@ public:
 
 template <> class physical_io<pin::PIO0_1> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044010}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044010}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -117,7 +131,7 @@ public:
 
 template <> class physical_io<pin::PIO0_2> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004401C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004401C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -134,7 +148,7 @@ public:
 
 template <> class physical_io<pin::PIO0_3> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004402C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004402C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -151,7 +165,7 @@ public:
 
 template <> class physical_io<pin::PIO0_4> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044030}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044030}; }
 public:
   enum class termination : rtl::u32 {
     none = 0
@@ -166,7 +180,7 @@ public:
 
 template <> class physical_io<pin::PIO0_5> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044034}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044034}; }
 public:
   enum class termination : rtl::u32 {
     none = 0
@@ -181,7 +195,7 @@ public:
 
 template <> class physical_io<pin::PIO0_6> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004404C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004404C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -198,7 +212,7 @@ public:
 
 template <> class physical_io<pin::PIO0_7> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044050}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044050}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -215,7 +229,7 @@ public:
 
 template <> class physical_io<pin::PIO0_8> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044060}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044060}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -232,7 +246,7 @@ public:
 
 template <> class physical_io<pin::PIO0_9> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044064}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044064}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -249,7 +263,7 @@ public:
 
 template <> class physical_io<pin::PIO0_10> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044068}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044068}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -266,7 +280,7 @@ public:
 
 template <> class physical_io<pin::PIO0_11> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044074}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044074}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -283,7 +297,7 @@ public:
 
 template <> class physical_io<pin::PIO1_0> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044078}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044078}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -300,7 +314,7 @@ public:
 
 template <> class physical_io<pin::PIO1_1> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004407C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004407C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -317,7 +331,7 @@ public:
 
 template <> class physical_io<pin::PIO1_2> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044080}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044080}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -334,7 +348,7 @@ public:
 
 template <> class physical_io<pin::PIO1_3> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044090}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044090}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -351,7 +365,7 @@ public:
 
 template <> class physical_io<pin::PIO1_4> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044094}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044094}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -368,7 +382,7 @@ public:
 
 template <> class physical_io<pin::PIO1_5> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x400440A0}; }
+  static auto IOCON() { return detail::iocon_mmio{0x400440A0}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -385,7 +399,7 @@ public:
 
 template <> class physical_io<pin::PIO1_6> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x400440A4}; }
+  static auto IOCON() { return detail::iocon_mmio{0x400440A4}; }
 public:
   enum class uart_rx_options {
     none = 0
@@ -410,7 +424,7 @@ public:
 
 template <> class physical_io<pin::PIO1_7> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x400440A8}; }
+  static auto IOCON() { return detail::iocon_mmio{0x400440A8}; }
 public:
   enum class uart_tx_options {
     none = 0
@@ -435,7 +449,7 @@ public:
 
 template <> class physical_io<pin::PIO1_8> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044014}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044014}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -452,7 +466,7 @@ public:
 
 template <> class physical_io<pin::PIO1_9> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044038}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044038}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -469,7 +483,7 @@ public:
 
 template <> class physical_io<pin::PIO1_10> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004406C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004406C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -486,7 +500,7 @@ public:
 
 template <> class physical_io<pin::PIO1_11> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044098}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044098}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -503,7 +517,7 @@ public:
 
 template <> class physical_io<pin::PIO2_0> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044008}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044008}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -523,7 +537,7 @@ public:
 
 template <> class physical_io<pin::PIO2_1> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044028}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044028}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -540,7 +554,7 @@ public:
 
 template <> class physical_io<pin::PIO2_2> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004405C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004405C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -557,7 +571,7 @@ public:
 
 template <> class physical_io<pin::PIO2_3> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004408C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004408C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -574,7 +588,7 @@ public:
 
 template <> class physical_io<pin::PIO2_4> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044040}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044040}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -591,7 +605,7 @@ public:
 
 template <> class physical_io<pin::PIO2_5> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044044}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044044}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -608,7 +622,7 @@ public:
 
 template <> class physical_io<pin::PIO2_6> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044000}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044000}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -625,7 +639,7 @@ public:
 
 template <> class physical_io<pin::PIO2_7> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044020}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044020}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -642,7 +656,7 @@ public:
 
 template <> class physical_io<pin::PIO2_8> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044024}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044024}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -659,7 +673,7 @@ public:
 
 template <> class physical_io<pin::PIO2_9> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044054}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044054}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -676,7 +690,7 @@ public:
 
 template <> class physical_io<pin::PIO2_10> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044058}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044058}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -693,7 +707,7 @@ public:
 
 template <> class physical_io<pin::PIO2_11> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044070}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044070}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -710,7 +724,7 @@ public:
 
 template <> class physical_io<pin::PIO3_0> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044084}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044084}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -727,7 +741,7 @@ public:
 
 template <> class physical_io<pin::PIO3_1> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044088}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044088}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -744,7 +758,7 @@ public:
 
 template <> class physical_io<pin::PIO3_2> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004409C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004409C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -761,7 +775,7 @@ public:
 
 template <> class physical_io<pin::PIO3_3> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x400440AC}; }
+  static auto IOCON() { return detail::iocon_mmio{0x400440AC}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -778,7 +792,7 @@ public:
 
 template <> class physical_io<pin::PIO3_4> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x4004403C}; }
+  static auto IOCON() { return detail::iocon_mmio{0x4004403C}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;
@@ -795,7 +809,7 @@ public:
 
 template <> class physical_io<pin::PIO3_5> {
 private:
-  static auto IOCON() { return rtl::mmio<rtl::u32>{0x40044048}; }
+  static auto IOCON() { return detail::iocon_mmio{0x40044048}; }
 public:
   using termination = basic_termination;
   using digital_input_options = basic_digital_input_options;

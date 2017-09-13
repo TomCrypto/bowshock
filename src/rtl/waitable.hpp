@@ -47,7 +47,6 @@ public:
 
   // TODO: replace wfi with the correct "wait for interrupt/event" intrinsic for the platform
   // e.g. rtl::wait or rtl::pause
-  // TODO: implement a buffer abstraction (possibly with wraparound support?)
 
   /// @brief Waits for all of the waitables passed to complete or fail.
   template <typename... waitables> static auto wait_all(waitables&&... list) {

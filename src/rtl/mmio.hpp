@@ -46,7 +46,7 @@ public:
     *reg = 0;
   }
 
-  /// @brief Writes all bits in the mask to the register. This is equivalent to \c write<mask>(all bits one).
+  /// @brief Writes all bits in the mask to the register. This is equivalent to \c write<mask>(all mask bits one).
   ///
   /// @remarks If your mask is all-ones, use the non-templated \c set() function instead to avoid a readback.
   template <T mask> auto set() {
@@ -106,6 +106,30 @@ public:
     return (*reg & mask) == 0;
   }
 
+  /// @brief Clears the given bit in the register.
+  template <std::size_t bit> auto clear_bit() {
+    static_assert(bit < sizeof(T) * 8, "bit out of range");
+    clear<1 << bit>();
+  }
+
+  /// @brief Sets the given bit in the register.
+  template <std::size_t bit> auto set_bit() {
+    static_assert(bit < sizeof(T) * 8, "bit out of range");
+    set<1 << bit>();
+  }
+
+  /// @brief Toggles the given bit in the register.
+  template <std::size_t bit> auto toggle_bit() {
+    static_assert(bit < sizeof(T) * 8, "bit out of range");
+    toggle<1 << bit>();
+  }
+
+  /// @brief Reads the given bit in the register.
+  template <std::size_t bit> auto read_bit() const {
+    static_assert(bit < sizeof(T) * 8, "bit out of range");
+    all<1 << bit>();
+  }
+
 private:
   volatile T* reg;
 };
@@ -122,6 +146,9 @@ template <typename T> struct mmio_ro : public mmio<T> {
   template <T mask> auto write(T bits)                = delete;
   template <T mask> auto safe_write(T bits)           = delete;
   auto write(T bits)                                  = delete;
+  template <std::size_t bit> auto clear_bit()         = delete;
+  template <std::size_t bit> auto toggle_bit()        = delete;
+  template <std::size_t bit> auto set_bit()           = delete;
 };
 
 /// @brief A write-only version of mmio. You can still access the read methods explicitly.
@@ -132,6 +159,7 @@ template <typename T> struct mmio_wo : public mmio<T> {
   template <T mask = mmio<T>::all_bits> auto any() const  = delete;
   template <T mask = mmio<T>::all_bits> auto all() const  = delete;
   template <T mask = mmio<T>::all_bits> auto none() const = delete;
+  template <std::size_t bit> auto read_bit() const        = delete;
 };
 
 /// @brief Alias of mmio for consistency with mmio_ro and mmio_wo.

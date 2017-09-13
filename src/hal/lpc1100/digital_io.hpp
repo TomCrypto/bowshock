@@ -9,6 +9,7 @@
 ///          however remain configurable as digital inputs.
 
 #include <rtl/mmio.hpp>
+#include <rtl/intrinsics.hpp>
 
 #include <hal/digital_io.hpp>
 #include <hal/lpc1100/physical_io.hpp>
@@ -18,7 +19,31 @@ namespace hal::lpc1100 {
   template <pin pin> class digital_input;
   template <pin pin> class digital_output;
 
-namespace {
+namespace digital_io_detail {
+
+inline auto SYSAHBCLKCTRL() { return rtl::mmio<rtl::u32>{0x40048080}; }
+
+// move this general resource management stuff to a separate class
+// which can monitor exactly which resources are used and turn the clocks on and off accordingly?
+// this would have to be an internal object somehow
+
+static inline int gpio_refcount = 0;
+
+inline auto acquire_gpio() {
+  rtl::intrinsics::non_preemptible([](){
+    if (gpio_refcount++ == 0) {
+      SYSAHBCLKCTRL().set_bit<6>();
+    }
+  });
+}
+
+inline auto release_gpio() {
+  rtl::intrinsics::non_preemptible([](){
+    if (--gpio_refcount == 0) {
+      SYSAHBCLKCTRL().clear_bit<6>();
+    }
+  });
+}
 
 template <pin pin, rtl::uptr gpio_ptr, std::size_t port_no>
 class basic_digital_input : public hal::digital_input<basic_digital_input<pin, gpio_ptr, port_no>> {
@@ -32,7 +57,12 @@ public:
 
   basic_digital_input(termination termination, options options = options::none)
     : physical_io(termination, options) {
+    acquire_gpio();
     DIR().template clear<port_mask>();
+  }
+
+  ~basic_digital_input() {
+    release_gpio();
   }
 
   auto state() {
@@ -57,8 +87,13 @@ public:
 
   basic_digital_output(hal::logic_level initial_level, options options = options::none)
     : physical_io(options) {
-    this->drive(initial_level);
+    acquire_gpio();
     DIR().template set<port_mask>();
+    this->drive(initial_level);
+  }
+
+  ~basic_digital_output() {
+    release_gpio();
   }
 
   auto drive_low() {
@@ -79,10 +114,14 @@ private:
 }
 
 #define DIGITAL_INPUT(PIN, GPIO, PORT_NO) \
-  template <> class digital_input<PIN> : public basic_digital_input<PIN, GPIO, PORT_NO> { using basic_digital_input::basic_digital_input; };
+  template <> class digital_input<PIN> : public digital_io_detail::basic_digital_input<PIN, GPIO, PORT_NO> {\
+    using digital_io_detail::basic_digital_input<PIN, GPIO, PORT_NO>::basic_digital_input;\
+  };
 
 #define DIGITAL_OUTPUT(PIN, GPIO, PORT_NO) \
-template <> class digital_output<PIN> : public basic_digital_output<PIN, GPIO, PORT_NO> { using basic_digital_output::basic_digital_output; };
+  template <> class digital_output<PIN> : public digital_io_detail::basic_digital_output<PIN, GPIO, PORT_NO> {\
+    using digital_io_detail::basic_digital_output<PIN, GPIO, PORT_NO>::basic_digital_output;\
+  };
 
 #define DIGITAL_IO(PIN, GPIO, PORT_NO) \
   DIGITAL_INPUT(PIN, GPIO, PORT_NO) \

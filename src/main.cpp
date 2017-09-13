@@ -1,3 +1,5 @@
+#define RTL_CORTEX_M0
+
 #include <rtl/platform.hpp>
 
 #include <hal/lpc1114/headers/LPC11xx.h>
@@ -32,8 +34,10 @@ static void flash_access_time(uint32_t frequency)
 
 static void system_init(void)
 {
-    LPC_SYSCON->SYSAHBCLKCTRL |= SYSAHBCLKCTRL_IOCON;   // enable clock for IO configuration block
+    //LPC_SYSCON->SYSAHBCLKCTRL |= SYSAHBCLKCTRL_IOCON;   // enable clock for IO configuration block
+    // ^ shouldn't be needed anymore
     LPC_SYSCON->SYSAHBCLKCTRL |= (1<<6); // enable GPIO clock
+    // ^ shouldn't be needed anymore
 }
 
 namespace dev = hal::lpc1100;
