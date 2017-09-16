@@ -36,7 +36,7 @@ static void system_init(void)
 {
     //LPC_SYSCON->SYSAHBCLKCTRL |= SYSAHBCLKCTRL_IOCON;   // enable clock for IO configuration block
     // ^ shouldn't be needed anymore
-    LPC_SYSCON->SYSAHBCLKCTRL |= (1<<6); // enable GPIO clock
+    // LPC_SYSCON->SYSAHBCLKCTRL |= (1<<6); // enable GPIO clock
     // ^ shouldn't be needed anymore
 }
 
@@ -50,11 +50,11 @@ void assert_signal() {
   auto pin = assert_pin(hal::logic_level::high);
 
   for (auto i = 0; i < 5; ++i) {
-    for (auto j = 0; j < 0xFFFF; ++j) {
+    for (auto j = 0; j < 0x1FFFF; ++j) {
       pin.drive_high();
     }
 
-    for (auto j = 0; j < 0xFFFF; ++j) {
+    for (auto j = 0; j < 0x1FFFF; ++j) {
       pin.drive_low();
     }
   }
@@ -80,21 +80,20 @@ auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
 
   LPC_SYSCON->SYSAHBCLKDIV = 1;           // set AHB clock divider to 1
 
-  auto uart = dev::uart0(115200);
+  auto uart = dev::uart0(9600);
 
   if (context.event == dev::reset_event::assert) {
-    std::size_t length = 0;
-
-    while (true) {
-        if (context.assert.message[length++] == '\0') {
-            break;
-        }
-    }
-
-    //uart.write({const_cast<char*>(context.assert.message), length - 1}).wait();
-
     assert_signal();
   }
+
+  constexpr auto x = rtl::q32<rtl::rational_mode::best>(50, 30);
+  auto y = rtl::q32<rtl::rational_mode::best>(500, 300);
+
+  rtl::assert((x + y + x - y - x) == x, "fuck");
+
+  /*if (rtl::units_detail::modinv<rtl::u32>(385349) == 3845228941) {
+    rtl::assert(false, "fuck");
+  }*/
 
   #if 0
   const char map[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -123,12 +122,7 @@ auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
     std::size_t pos = 0;
     std::size_t offset = 0;
 
-    /*auto read_waitable = uart.read([&](const rtl::u8& data) {
-      buffer[pos++] = data;
-      return data == '\r';
-    });*/
-    auto read_waitable = uart.read(read_until(buffer, pos, '\r'));
-    read_waitable.wait();
+    uart.read(read_until(buffer, pos, '\r')).wait();
 
     uart.write([&](rtl::u8& data) {
       if (offset == pos) {

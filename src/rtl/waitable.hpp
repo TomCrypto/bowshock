@@ -11,6 +11,7 @@
 /// Ultimately all waitables **must** depend on some asynchronous event external to the processor.
 
 #include <rtl/base.hpp>
+#include <rtl/intrinsics.hpp>
 
 namespace rtl
 {
@@ -50,12 +51,16 @@ public:
 
   /// @brief Waits for all of the waitables passed to complete or fail.
   template <typename... waitables> static auto wait_all(waitables&&... list) {
-    while (!wait_all_inner(std::forward<waitables>(list)...)) { __asm__("wfi"); }
+    while (!wait_all_inner(std::forward<waitables>(list)...)) {
+      rtl::intrinsics::wait_for_interrupt();
+    }
   }
 
   /// @brief Waits for any of the waitables passed to complete or fail.
   template <typename... waitables> static auto wait_any(waitables&&... list) {
-    while (!wait_any_inner(std::forward<waitables>(list)...)) { __asm__("wfi"); }
+    while (!wait_any_inner(std::forward<waitables>(list)...)) {
+      rtl::intrinsics::wait_for_interrupt();
+    }
   }
 
 private:

@@ -219,7 +219,6 @@ private:
           while (LSR().template all<0b1>()) {
             if (context(RBR().read())) {
               status = status::complete;
-              IER().template clear<0b101>();
               break;
             }
           }
