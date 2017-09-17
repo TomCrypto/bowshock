@@ -18,7 +18,7 @@
 #include <new>
 /// @endcond
 
-extern "C" void abort();
+extern "C" [[noreturn]] void abort();
 extern "C" void* memcpy(void* destination, const void* source, std::size_t num);
 extern "C" int memcmp(const void* a, const void* b, std::size_t num);
 

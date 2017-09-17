@@ -98,10 +98,18 @@ auto read_any() {
   auto input = input_pin(input_pin::termination::pullup);
 
   //constexpr auto x = rtl::q32<rtl::rational_mode::best>(1.666981f);
-  constexpr auto x = rtl::q32<rtl::rational_mode::fast>(18481.38438f);
-  constexpr auto y = rtl::q32<rtl::rational_mode::fast>(3.1415926535897932384626433832795);
+  constexpr auto x = rtl::q32<rtl::rational_mode::best>(18481.38438f);
+  constexpr auto y = rtl::q32<rtl::rational_mode::best>(3.1415926535897932384626433832795);
 
   uart.read(read_any()).wait();
+
+  constexpr auto foo = rtl::MHz<rtl::q32<rtl::rational_mode::fast>>{rtl::q32<rtl::rational_mode::fast>{100.0f}};
+  constexpr auto bar = rtl::Hz<rtl::q32<rtl::rational_mode::fast>>{foo};
+
+  sys::debug(uart, std::make_pair("%10s", bar.value().numerator()));
+  sys::debug(uart, std::make_pair("", " / "));
+  sys::debug(uart, std::make_pair("%10s", bar.value().denominator()));
+  sys::debug(uart, std::make_pair("", "\r\n"));
 
   sys::debug(uart, std::make_pair("%10s", "FRAC = "),
                    std::make_pair("%10s", y.numerator()),
@@ -111,7 +119,7 @@ auto read_any() {
 
   //output.drive_low();
 
-  rtl::assert<x + (x + y + x - y - x) == x + x>("test");
+  rtl::assert<x + (y - x) - 2.5f <= x + x>("test");
 
   //output.drive_high();  
 
