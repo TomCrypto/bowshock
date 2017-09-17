@@ -12,6 +12,8 @@
 #include <hal/lpc1100/interrupt.hpp>
 #include <hal/lpc1100/clock.hpp>
 
+#include <sys/debug.hpp>
+
 static void flash_access_time(uint32_t frequency);
 
 static void flash_access_time(uint32_t frequency)
@@ -67,6 +69,12 @@ auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
   };
 }
 
+auto read_any() {
+  return [](const rtl::u8&) {
+    return true;
+  };
+}
+
 [[noreturn]] void main(const dev::reset_context& context) {
   system_init();
 
@@ -86,14 +94,26 @@ auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
     assert_signal();
   }
 
-  constexpr auto x = rtl::q32<rtl::rational_mode::best>(50, 30);
-  auto y = rtl::q32<rtl::rational_mode::best>(500, 300);
+  auto output = output_pin(hal::logic_level::high);
+  auto input = input_pin(input_pin::termination::pullup);
 
-  rtl::assert((x + y + x - y - x) == x, "fuck");
+  //constexpr auto x = rtl::q32<rtl::rational_mode::best>(1.666981f);
+  constexpr auto x = rtl::q32<rtl::rational_mode::fast>(18481.38438f);
+  constexpr auto y = rtl::q32<rtl::rational_mode::fast>(-3852.48219f);
 
-  /*if (rtl::units_detail::modinv<rtl::u32>(385349) == 3845228941) {
-    rtl::assert(false, "fuck");
-  }*/
+  uart.read(read_any()).wait();
+
+  sys::debug(uart, std::make_pair("%10s", "FRAC = "),
+                   std::make_pair("%10s", x.numerator()),
+                   std::make_pair("%10s", " / "),
+                   std::make_pair("%10s", x.denominator()),
+                   std::make_pair("%10s", "\r\n"));
+
+  //output.drive_low();
+
+  rtl::assert<x + (x + y + x - y - x) == x + x>("test");
+
+  //output.drive_high();  
 
   #if 0
   const char map[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -111,12 +131,10 @@ auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
   uart.write({buf, sizeof(buf)}).wait();
   #endif
 
-  auto output = output_pin(hal::logic_level::high);
-  auto input = input_pin(input_pin::termination::pullup);
-
   //auto gpio2 = dev::gpio2<dev::pin::PIO0_8>(/* termination, interrupt settings, etc.. */);
   //auto uart = dev::uart<dev::pin::PIO1_7, dev::pin::PIO1_6>(/* uart settings */);
 
+  /*
   while (true) {
     char buffer[32];
     std::size_t pos = 0;
@@ -133,6 +151,7 @@ auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
       return false;
     }).wait();
   }
+  */
 
   /*
   while (true) {
@@ -144,17 +163,11 @@ auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
 
   while (true) {
     for (auto i = 0; i < 0x1FFFFF; ++i) {
-        output.drive_low();
+      output.drive_low();
     }
 
     for (auto i = 0; i < 0x1FFFFF; ++i) {
-        output.drive_high();
+      output.drive_high();
     }
-
-    /*
-    output.drive(input.state());
-
-    rtl::assert(input.state() == hal::logic_level::high, "fuck");
-    */
   }
 }

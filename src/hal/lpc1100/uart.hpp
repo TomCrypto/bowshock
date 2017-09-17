@@ -38,11 +38,11 @@ public:
     interrupt::enable(interrupt::type::uart);
   }
 
-  template <typename T> auto write(const T& context) {
+  template <typename T> [[nodiscard]] auto write(const T& context) {
     return send_waitable<T>(context);
   }
 
-  template <typename T> auto read(const T& context) {
+  template <typename T> [[nodiscard]] auto read(const T& context) {
     return recv_waitable<T>(context);
   }
 

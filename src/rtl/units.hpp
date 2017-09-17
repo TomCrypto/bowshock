@@ -87,163 +87,222 @@ template <> constexpr rtl::u64 modinv<rtl::u64>(rtl::u64 a) {
   return x;
 }
 
-template <typename T, typename D, rational_mode mode> struct rational {
+template <typename U, typename UD, rational_mode mode> struct rational {
 public:
-  constexpr rational(T p, T q) : p(p), q(q) {
+  using S = typename std::make_signed<U>::type;
+  using SD = typename std::make_signed<UD>::type;
+
+  constexpr auto numerator() const { return p; }
+  constexpr auto denominator() const { return q; }
+
+  constexpr rational() {}
+
+  constexpr rational(float x) {
+    auto p_limit = std::numeric_limits<S>::max();
+    auto q_limit = std::numeric_limits<U>::max();
+
+    auto p1 = SD{0};
+    auto q1 = UD{1};
+    auto p2 = SD{1};
+    auto q2 = UD{0};
+    auto n = 0;
+
+    do {
+      auto p0 = p1;
+      auto q0 = q1;
+      p1 = p2;
+      q1 = q2;
+      n = static_cast<S>(x); // TODO: probably wrong (need integer part)
+      p2 = p0 + n * p1;
+      q2 = q0 + n * q1;
+
+      if (x == n) {
+        p1 = p2;
+        q1 = q2;
+      } else {
+        x = 1 / (x - n);
+      }
+    } while (p2 < p_limit && q2 < q_limit && n != x);
+
+    this->p = p1;
+    this->q = q1;
+  }
+
+  constexpr rational(S p, U q) : p(p), q(q) {
     rtl::assert(q != 0, "denominator must be nonzero");
 
-    auto pd = static_cast<D>(this->p);
-    auto qd = static_cast<D>(this->q);
+    auto pd = static_cast<SD>(this->p);
+    auto qd = static_cast<UD>(this->q);
 
     normalize(pd, qd);
 
-    this->p = pd;
-    this->q = qd;
+    this->p = static_cast<S>(pd);
+    this->q = static_cast<U>(qd);
   }
 
-  constexpr rational(T x) : p(x), q(1) {}
+  template <typename U2, typename UD2, rational_mode mode2> constexpr rational(const rational<U2, UD2, mode2>& other) {
+    using SD2 = typename std::make_signed<UD2>::type;
 
-  auto& operator+=(const rational<T, D, mode>& rhs) {
-    auto pd = static_cast<D>(this->p) * static_cast<D>(rhs.q)
-            + static_cast<D>(this->q) * static_cast<D>(rhs.p);
-    auto qd = static_cast<D>(this->q) * static_cast<D>(rhs.q);
+    if (sizeof(U) < sizeof(U2)) {
+      auto pd = static_cast<SD2>(other.numerator());
+      auto qd = static_cast<UD2>(other.denominator());
+
+      while ((pd | qd) & ~std::numeric_limits<U>::max()) {
+        pd >>= 1;
+        qd >>= 1;
+      }
+
+      this->p = static_cast<S>(pd);
+      this->q = static_cast<U>(qd);
+    } else {
+      this->p = static_cast<S>(other.numerator());
+      this->q = static_cast<U>(other.denominator());
+    }
+  }
+
+  constexpr rational(S x) : p(x), q(1) {}
+
+  constexpr auto& operator+=(const rational<U, UD, mode>& rhs) {
+    auto pd = static_cast<SD>(this->p) * static_cast<SD>(rhs.q)
+            + static_cast<SD>(this->q) * static_cast<SD>(rhs.p);
+    auto qd = static_cast<UD>(this->q) * static_cast<UD>(rhs.q);
 
     normalize(pd, qd);
 
-    this->p = static_cast<T>(pd);
-    this->q = static_cast<T>(qd);
+    this->p = static_cast<S>(pd);
+    this->q = static_cast<U>(qd);
 
     return *this;
   }
 
-  auto& operator+=(const T& rhs) {
-    auto pd = static_cast<D>(this->p)
-            + static_cast<D>(this->q) * static_cast<D>(rhs);
-    auto qd = static_cast<D>(this->q);
+  constexpr auto& operator+=(const S& rhs) {
+    auto pd = static_cast<SD>(this->p)
+            + static_cast<SD>(this->q) * static_cast<SD>(rhs);
+    auto qd = static_cast<UD>(this->q);
 
     normalize(pd, qd);
 
-    this->p = static_cast<T>(pd);
-    this->q = static_cast<T>(qd);
+    this->p = static_cast<S>(pd);
+    this->q = static_cast<U>(qd);
 
     return *this;
   }
 
-  auto operator+(const rational<T, D, mode>& rhs) const {
+  constexpr auto operator+(const rational<U, UD, mode>& rhs) const {
     auto lhs = *this;
     return lhs += rhs;
   }
 
-  auto& operator-=(const rational<T, D, mode>& rhs) {
-    auto pd = static_cast<D>(this->p) * static_cast<D>(rhs.q)
-            - static_cast<D>(this->q) * static_cast<D>(rhs.p);
-    auto qd = static_cast<D>(this->q) * static_cast<D>(rhs.q);
+  constexpr auto& operator-=(const rational<U, UD, mode>& rhs) {
+    auto pd = static_cast<SD>(this->p) * static_cast<SD>(rhs.q)
+            - static_cast<SD>(this->q) * static_cast<SD>(rhs.p);
+    auto qd = static_cast<UD>(this->q) * static_cast<UD>(rhs.q);
 
     normalize(pd, qd);
 
-    this->p = static_cast<T>(pd);
-    this->q = static_cast<T>(qd);
+    this->p = static_cast<S>(pd);
+    this->q = static_cast<U>(qd);
 
     return *this;
   }
 
-  auto& operator-=(const T& rhs) {
-    auto pd = static_cast<D>(this->p)
-            - static_cast<D>(this->q) * static_cast<D>(rhs);
-    auto qd = static_cast<D>(this->q);
+  constexpr auto& operator-=(const S& rhs) {
+    auto pd = static_cast<SD>(this->p)
+            - static_cast<SD>(this->q) * static_cast<SD>(rhs);
+    auto qd = static_cast<UD>(this->q);
 
     normalize(pd, qd);
 
-    this->p = static_cast<T>(pd);
-    this->q = static_cast<T>(qd);
+    this->p = static_cast<S>(pd);
+    this->q = static_cast<U>(qd);
 
     return *this;
   }
 
-  auto operator-(const rational<T, D, mode>& rhs) const {
+  constexpr auto operator-(const rational<U, UD, mode>& rhs) const {
     auto lhs = *this;
     return lhs -= rhs;
   }
 
-  auto& operator*=(const rational<T, D, mode>& rhs) {
-    auto pd = static_cast<D>(this->p) * static_cast<D>(rhs.p);
-    auto qd = static_cast<D>(this->q) * static_cast<D>(rhs.q);
+  constexpr auto& operator*=(const rational<U, UD, mode>& rhs) {
+    auto pd = static_cast<SD>(this->p) * static_cast<SD>(rhs.p);
+    auto qd = static_cast<UD>(this->q) * static_cast<UD>(rhs.q);
 
     normalize(pd, qd);
 
-    this->p = static_cast<T>(pd);
-    this->q = static_cast<T>(qd);
+    this->p = static_cast<S>(pd);
+    this->q = static_cast<U>(qd);
 
     return *this;
   }
 
-  auto& operator*=(const T& rhs) {
-    auto pd = static_cast<D>(this->p) * static_cast<D>(rhs);
-    auto qd = static_cast<D>(this->q);
+  constexpr auto& operator*=(const S& rhs) {
+    auto pd = static_cast<SD>(this->p) * static_cast<SD>(rhs);
+    auto qd = static_cast<UD>(this->q);
 
     normalize(pd, qd);
 
-    this->p = static_cast<T>(pd);
-    this->q = static_cast<T>(qd);
+    this->p = static_cast<S>(pd);
+    this->q = static_cast<U>(qd);
 
     return *this;
   }
 
-  auto operator*(const rational<T, D, mode>& rhs) const {
+  constexpr auto operator*(const rational<U, UD, mode>& rhs) const {
     auto lhs = *this;
     return lhs *= rhs;
   }
 
-  auto& operator/=(const rational<T, D, mode>& rhs) {
+  constexpr auto& operator/=(const rational<U, UD, mode>& rhs) {
     return *this *= (1 / rhs);
   }
 
-  auto& operator/=(const T& rhs) {
-    return *this * (1 / rational<T, D, mode>{rhs});
+  constexpr auto& operator/=(const S& rhs) {
+    return *this * (1 / rational<U, UD, mode>{rhs});
   }
 
-  auto operator/(const rational<T, D, mode>& rhs) const {
+  constexpr auto operator/(const rational<U, UD, mode>& rhs) const {
     auto lhs = *this;
     return lhs /= rhs;
   }
 
-  auto operator==(const rational<T, D, mode>& rhs) const {
+  constexpr auto operator==(const rational<U, UD, mode>& rhs) const {
     if (mode == rtl::rational_mode::best) {
       return (this->p == rhs.p) && (this->q == rhs.q);
     } else {
-      auto lhs_d = static_cast<D>(this->p) * static_cast<D>(rhs.q);
-      auto rhs_d = static_cast<D>(rhs.p) * static_cast<D>(this->q);
+      auto lhs_d = static_cast<SD>(this->p) * static_cast<SD>(rhs.q);
+      auto rhs_d = static_cast<SD>(rhs.p) * static_cast<SD>(this->q);
 
       return lhs_d == rhs_d;
     }
   }
 
-  auto operator!=(const rational<T, D, mode>& rhs) const {
+  constexpr auto operator!=(const rational<U, UD, mode>& rhs) const {
     return !(*this == rhs);
   }
   
-  auto operator<(const rational<T, D, mode>& rhs) const {
-    auto lhs_d = static_cast<D>(this->p) * static_cast<D>(rhs.q);
-    auto rhs_d = static_cast<D>(rhs.p) * static_cast<D>(this->q);
+  constexpr auto operator<(const rational<U, UD, mode>& rhs) const {
+    auto lhs_d = static_cast<SD>(this->p) * static_cast<SD>(rhs.q);
+    auto rhs_d = static_cast<SD>(this->q) * static_cast<SD>(rhs.p);
 
     return lhs_d < rhs_d;
   }
 
-  auto operator>(const rational<T, D, mode>& rhs) const {
+  constexpr auto operator>(const rational<U, UD, mode>& rhs) const {
     return rhs < *this;
   }
   
-  auto operator<=(const rational<T, D, mode>& rhs) const {
+  constexpr auto operator<=(const rational<U, UD, mode>& rhs) const {
     return !(*this > rhs);
   }
   
-  auto operator>=(const rational<T, D, mode>& rhs) const {
+  constexpr auto operator>=(const rational<U, UD, mode>& rhs) const {
     return !(*this < rhs);
   }
 
 private:
-  constexpr static auto gcd(D a, D b) {
-    auto gcd = D{1};
+  constexpr static auto gcd(UD a, UD b) {
+    auto gcd = UD{1};
 
     while (b != 0) {
       gcd = b;
@@ -254,29 +313,58 @@ private:
     return gcd;
   }
 
-  constexpr static auto normalize(D& pd, D& qd) {
+  constexpr static auto normalize(SD& pd, UD& qd) {
+    if (pd == 0) {
+      qd = 1;
+      return;
+    }
+
+    auto positive = true;
+
+    if (pd < 0) {
+      positive = false;
+      pd *= -1;
+    }
+
     if (mode == rtl::rational_mode::best) {
-      while (!(pd & 0b1) && !(qd & 0b1)) {
-        pd >>= 1;
-        qd >>= 1;
+      while ((pd % 2 == 0) && (qd % 2 == 0)) {
+        pd /= 2;
+        qd /= 2;
       }
   
-      auto inv = modinv<D>(gcd(pd, qd));
+      auto inv = modinv<UD>(gcd(pd, qd));
+      //auto divisor = gcd(pd, qd);
 
       if (inv > 1) {
         pd *= inv;
         qd *= inv;
       }
+
+      /*
+      if (divisor > 1) {
+        pd /= divisor;
+        qd /= divisor;
+      }
+      */
     }
 
-    while ((pd | qd) & ~std::numeric_limits<T>::max()) {
-      pd >>= 1;
-      qd >>= 1;
+    //while ((pd | qd) & ~std::numeric_limits<U>::max()) {
+    while (pd > std::numeric_limits<S>::max() || qd > std::numeric_limits<U>::max()) {
+      pd /= 2;
+      qd /= 2;
+    }
+
+    if (!positive) {
+      pd *= -1;
+    }
+
+    if (qd == 0) {
+      qd = 1;
     }
   }
 
-  T p;
-  T q;
+  S p{0};
+  U q{1};
 };
 
 }
