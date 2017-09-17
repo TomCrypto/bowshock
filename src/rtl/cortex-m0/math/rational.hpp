@@ -381,7 +381,7 @@ private:
       }
     } while (p2 < p_limit && q2 < q_limit && n != x);
 
-    return std::make_pair(p1 * sign, q1);
+    return std::pair{p1 * sign, q1};
   }
 
   S p{0};
