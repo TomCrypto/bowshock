@@ -1,7 +1,7 @@
 cppflags = proc do
   option :ffreestanding
   option :nostdlib
-  option :std => 'c++1z'
+  option :std => 'c++17'
   option 'fshort-enums'
   option 'fno-exceptions'
   option :Wall
@@ -14,8 +14,8 @@ cppflags = proc do
 end
 
 headers = [
-  '/usr/arm-none-eabi/include/c++/7.1.0',
-  '/usr/arm-none-eabi/include/c++/7.1.0/arm-none-eabi/armv6-m'
+  '/usr/arm-none-eabi/include/c++/7.2.0',
+  '/usr/arm-none-eabi/include/c++/7.2.0/arm-none-eabi/armv6-m'
 ]
 
 software 'led-matrix', depends: ['hal'] do
@@ -66,6 +66,8 @@ hardware 'hal', targets: :lpc1100 do
     script 'src/hal/lpc1100/layout.ld'
     option :static
     option :nostdlib
+    option :'fuse-ld' => 'bfd'
+    option 'L/usr/lib/gcc/arm-none-eabi/7.2.0/armv6-m'
   end
 
   import 'gcc'
