@@ -15,7 +15,7 @@ namespace rtl
 
 #if defined(NO_ASSERT)
 #define TRACE(what) nullptr
-void assert(bool condition, const char* message) {}
+inline void assert(bool condition, const char* message) {}
 template <bool condition> constexpr void assert(const char* message) {}
 #else
 
