@@ -99,7 +99,7 @@ auto read_any() {
 
   //constexpr auto x = rtl::q32<rtl::rational_mode::best>(1.666981f);
   constexpr auto x = rtl::q32<rtl::rational_mode::fast>(18481.38438f);
-  constexpr auto y = rtl::q32<rtl::rational_mode::fast>(-3852.48219f);
+  constexpr auto y = rtl::q32<rtl::rational_mode::fast>(3.1415926535897932384626433832795);
 
   uart.read(read_any()).wait();
 

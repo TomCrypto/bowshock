@@ -58,11 +58,19 @@ template <> auto debug_formatter<const char*>(const std::pair<const char*, const
   return detail::write_str(fragment.second);
 }
 
-template <> auto debug_formatter<int>(const std::pair<const char*, int>& fragment) {
+template <> auto debug_formatter<unsigned int>(const std::pair<const char*, unsigned int>& fragment) {
   return detail::write_int(fragment.second);
 }
 
-template <> auto debug_formatter<unsigned int>(const std::pair<const char*, unsigned int>& fragment) {
+template <> auto debug_formatter<rtl::i16>(const std::pair<const char*, rtl::i16>& fragment) {
+  return detail::write_int(fragment.second);
+}
+
+template <> auto debug_formatter<rtl::u16>(const std::pair<const char*, rtl::u16>& fragment) {
+  return detail::write_int(fragment.second);
+}
+
+template <> auto debug_formatter<rtl::i32>(const std::pair<const char*, rtl::i32>& fragment) {
   return detail::write_int(fragment.second);
 }
 
