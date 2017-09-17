@@ -101,6 +101,8 @@ public:
     auto p_limit = std::numeric_limits<S>::max();
     auto q_limit = std::numeric_limits<U>::max();
 
+    auto sign = x < 0 ? -1 : 1;
+    x *= sign;
     auto p1 = SD{0};
     auto q1 = UD{1};
     auto p2 = SD{1};
@@ -112,7 +114,7 @@ public:
       auto q0 = q1;
       p1 = p2;
       q1 = q2;
-      n = static_cast<S>(x); // TODO: probably wrong (need integer part)
+      n = static_cast<S>(x);
       p2 = p0 + n * p1;
       q2 = q0 + n * q1;
 
@@ -124,7 +126,7 @@ public:
       }
     } while (p2 < p_limit && q2 < q_limit && n != x);
 
-    this->p = p1;
+    this->p = p1 * sign;
     this->q = q1;
   }
 

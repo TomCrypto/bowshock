@@ -104,9 +104,9 @@ auto read_any() {
   uart.read(read_any()).wait();
 
   sys::debug(uart, std::make_pair("%10s", "FRAC = "),
-                   std::make_pair("%10s", x.numerator()),
+                   std::make_pair("%10s", y.numerator()),
                    std::make_pair("%10s", " / "),
-                   std::make_pair("%10s", x.denominator()),
+                   std::make_pair("%10s", y.denominator()),
                    std::make_pair("%10s", "\r\n"));
 
   //output.drive_low();

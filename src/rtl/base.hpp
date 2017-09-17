@@ -2,7 +2,7 @@
 
 /// @file
 ///
-/// Fundamental definitions needed by the RTL.
+/// @brief Fundamental definitions needed by the RTL.
 ///
 /// @remarks This should be the only header which includes system headers.
 
