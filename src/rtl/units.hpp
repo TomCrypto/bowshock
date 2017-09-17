@@ -49,7 +49,7 @@ template <> constexpr float scale(magnitude magnitude) {
   }
 }
 
-template <> constexpr rtl::q32<rational_mode::fast> scale(magnitude magnitude) {
+template <> constexpr rtl::q32 scale(magnitude magnitude) {
   switch (magnitude) {
     case magnitude::n:
       return 1e-9;

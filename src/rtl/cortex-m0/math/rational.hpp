@@ -390,7 +390,9 @@ private:
 
 }
 
-template <rational_mode mode> using q16 = detail::rational<u16, u32, mode>;
-template <rational_mode mode> using q32 = detail::rational<u32, u64, mode>;
+using r16 = detail::rational<u16, u32, rational_mode::best>;
+using r32 = detail::rational<u32, u64, rational_mode::best>;
+using q16 = detail::rational<u16, u32, rational_mode::fast>;
+using q32 = detail::rational<u32, u64, rational_mode::fast>;
 
 }
