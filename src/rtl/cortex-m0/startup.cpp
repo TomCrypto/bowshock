@@ -10,11 +10,15 @@ namespace hal
 namespace rtl
 {
 
+namespace nv {
+
 section(".nvram") const char* assert_message;
 
+}
+
 static const char* clear_assert_message() {
-  auto message = assert_message;
-  assert_message = nullptr;
+  auto message = nv::assert_message;
+  nv::assert_message = nullptr;
   return message;
 }
 
