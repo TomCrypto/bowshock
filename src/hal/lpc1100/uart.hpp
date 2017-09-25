@@ -85,7 +85,7 @@ private:
     //LPC_UART->FCR = (1 << 2);
   }
 
-  template <typename T> struct send_waitable : public rtl::waitable<send_waitable<T>>, private rtl::noncopyable {
+  template <typename T> struct send_waitable : private rtl::noncopyable {
   private:
     auto flush_tx_queue() {
       FCR().template set<0b100>();
@@ -159,12 +159,16 @@ private:
       }
     }
 
+    auto wait() const {
+      return rtl::waitable::wait_all(*this);
+    }
+
   private:
     status status;
     T context;
   };
 
-  template <typename T> struct recv_waitable : public rtl::waitable<recv_waitable<T>>, private rtl::noncopyable {
+  template <typename T> struct recv_waitable : private rtl::noncopyable {
   private:
     auto flush_rx_queue() {
       FCR().template set<0b010>();
@@ -223,6 +227,10 @@ private:
             }
           }
       }
+    }
+
+    auto wait() const {
+      return rtl::waitable::wait_all(*this);
     }
 
   private:

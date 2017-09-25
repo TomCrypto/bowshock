@@ -106,6 +106,7 @@ auto read_any() {
   constexpr auto foo = rtl::MHz<rtl::q32>{{100.0f}};
   constexpr auto bar = rtl::Hz<rtl::q32>{foo};
 
+  /*
   sys::debug(uart, std::pair{"%10s", bar.value().numerator()});
   sys::debug(uart, std::pair{"", " / "});
   sys::debug(uart, std::pair{"%10s", bar.value().denominator()});
@@ -117,6 +118,9 @@ auto read_any() {
      std::pair{"%10s", " / "},
      std::pair{"%10s", y.denominator()},
      std::pair{"%10s", "\r\n"});
+  */
+
+  uart.write(sys::debug(std::pair{"10s", "HELLO WORLD!!!"}, std::pair{"", "some text"})).wait();
 
   //output.drive_low();
 
