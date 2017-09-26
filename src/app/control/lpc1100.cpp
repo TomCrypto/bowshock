@@ -93,6 +93,7 @@ word words[32];
 
   gpio = dev::digital_output<dev::pin::PIO0_8>(hal::logic_level::low);
 
+  #if 0
   auto uart = dev::uart0(9600);
 
   while (true) {
@@ -129,4 +130,5 @@ word words[32];
 
     handler(words, word_index);
   }
+  #endif
 }

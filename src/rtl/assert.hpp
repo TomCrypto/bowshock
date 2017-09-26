@@ -17,6 +17,7 @@ namespace rtl
 #define TRACE(what) nullptr
 inline void assert(bool condition, const char* message) {}
 template <bool condition> constexpr void assert(const char* message) {}
+[[noreturn]] inline auto unreachable(const char* message) { /* do something reasonable */ }
 #else
 
 /// @brief Decorates a string literal with the file and line where the macro is invoked.
@@ -28,7 +29,7 @@ extern nvram const char* assert_message;
 
 namespace detail {
 
-inline auto assert_tripped(const char* message) {
+[[noreturn]] inline auto assert_tripped(const char* message) {
   nv::assert_message = message;
   abort();
 }
@@ -47,6 +48,10 @@ template <bool condition> constexpr auto assert(const char* message) {
   if constexpr (!condition) {
     detail::assert_tripped(message);
   }
+}
+
+[[noreturn]] inline auto unreachable(const char* message) {
+  detail::assert_tripped(message);
 }
 
 #endif

@@ -44,7 +44,7 @@ public:
   }
 
   /// @brief Calls the interrupt context. Undefined if the context is not valid.
-  auto operator()(Args ...args) {
+  auto operator()(Args... args) {
     return function(context, std::forward<Args>(args)...);
   }
 

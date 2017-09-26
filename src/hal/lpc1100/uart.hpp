@@ -95,35 +95,34 @@ private:
       for (auto i = 0; i < 16; ++i) {
         rtl::u8 data;
   
-        if (context(data)) {
-          return true;
+        auto result = context(data);
+
+        if (result == rtl::waitable::status::pending) {
+          THR().write(data);
+        } else {
+          return result;
         }
-  
-        THR().write(data);
       }
   
-      return false;
+      return rtl::waitable::status::pending;
     }
-  
-    enum class status {
-      pending,
-      failed,
-      complete,
-      finishing
-    };
-  
+
   public:
-    send_waitable(const T& context) : status(status::pending), context(context) {
+    send_waitable(const T& context) : status(rtl::waitable::status::pending), context(context) {
       send_context = {decltype(send_context)::template member_function<send_waitable<T>>, this};
 
       flush_tx_queue();
 
-      if (fill_tx_queue()) {
-        status = status::finishing;
+      status = fill_tx_queue();
+
+      switch (status) {
+        case rtl::waitable::status::pending:
+          LSR().read();
+          IER().template set<0b10>();
+          break;
+        default:
+          IER().template clear<0b10>();
       }
-  
-      LSR().read();
-      IER().template set<0b10>();
     }
 
     send_waitable(send_waitable<T>&& other) = delete;
@@ -137,25 +136,23 @@ private:
     }
 
     auto is_complete() const {
-      return status == status::complete;
+      return status == rtl::waitable::status::complete;
     }
 
     auto is_failed() const {
-      return status == status::failed;
+      return status == rtl::waitable::status::failed;
     }
 
     auto is_pending() const {
-      return status == status::pending || status == status::finishing;
+      return status == rtl::waitable::status::pending;
     }
 
     auto interrupt() {
-      if (status == status::finishing) {
-        status = status::complete;
+      auto result = fill_tx_queue();
+
+      if (result != rtl::waitable::status::pending) {
         IER().template clear<0b10>();
-      } else {
-        if (fill_tx_queue()) {
-          status = status::finishing;
-        }
+        status = result;
       }
     }
 
@@ -164,7 +161,7 @@ private:
     }
 
   private:
-    status status;
+    rtl::waitable::status status;
     T context;
   };
 
@@ -174,14 +171,8 @@ private:
       FCR().template set<0b010>();
     }
 
-    enum class status {
-      pending,
-      failed,
-      complete
-    };
-
   public:
-    recv_waitable(const T& context) : status(status::pending), context(context) {
+    recv_waitable(const T& context) : status(rtl::waitable::status::pending), context(context) {
       recv_context = {decltype(recv_context)::template member_function<recv_waitable<T>>, this};
 
       flush_rx_queue();
@@ -199,30 +190,32 @@ private:
     }
 
     auto is_complete() const {
-      return status == status::complete;
+      return status == rtl::waitable::status::complete;
     }
 
     auto is_failed() const {
-      return status == status::failed;
+      return status == rtl::waitable::status::failed;
     }
 
     auto is_pending() const {
-      return status == status::pending;
+      return status == rtl::waitable::status::pending;
     }
 
     auto interrupt(rtl::u32 iir) {
       switch (iir) {
         case 0b0110: /* RLS */
           if (LSR().template any<0b10001110>()) {
-            status = status::failed;
+            status = rtl::waitable::status::failed;
           }
 
           break;
         case 0b0100: /* RDA */
         case 0b1100: /* CTI */
           while (LSR().template all<0b1>()) {
-            if (context(RBR().read())) {
-              status = status::complete;
+            auto result = context(RBR().read());
+
+            if (result != rtl::waitable::status::pending) {
+              status = result;
               break;
             }
           }
@@ -234,7 +227,7 @@ private:
     }
 
   private:
-    status status;
+    rtl::waitable::status status;
     T context;
   };
 };

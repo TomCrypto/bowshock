@@ -12,7 +12,7 @@
 #include <hal/lpc1100/interrupt.hpp>
 #include <hal/lpc1100/clock.hpp>
 
-#include <sys/debug.hpp>
+#include <sys/format.hpp>
 
 static void flash_access_time(uint32_t frequency);
 
@@ -32,14 +32,6 @@ static void flash_access_time(uint32_t frequency)
     flashcfg_register &= ~(FLASHCFG_FLASHTIM_mask << FLASHCFG_FLASHTIM_bit);    // mask the FLASHTIM field
     flashcfg_register |= access_time << FLASHCFG_FLASHTIM_bit;  // use new FLASHTIM value
     FLASHCFG = flashcfg_register;           // save the new value back to the register
-}
-
-static void system_init(void)
-{
-    //LPC_SYSCON->SYSAHBCLKCTRL |= SYSAHBCLKCTRL_IOCON;   // enable clock for IO configuration block
-    // ^ shouldn't be needed anymore
-    // LPC_SYSCON->SYSAHBCLKCTRL |= (1<<6); // enable GPIO clock
-    // ^ shouldn't be needed anymore
 }
 
 namespace dev = hal::lpc1100;
@@ -65,19 +57,17 @@ void assert_signal() {
 auto read_until(char* buffer, std::size_t& length, rtl::u8 pattern) {
   return [buffer, &length, pattern](const rtl::u8& data) {
     buffer[length++] = data;
-    return data == pattern;
+    return data == pattern ? rtl::waitable::status::complete : rtl::waitable::status::pending;
   };
 }
 
 auto read_any() {
   return [](const rtl::u8&) {
-    return true;
+    return rtl::waitable::status::complete;
   };
 }
 
 [[noreturn]] void main(const dev::reset_context& context) {
-  system_init();
-
   auto frequency = 48000000;
   flash_access_time(frequency);           // configure flash access time first
 
@@ -106,22 +96,8 @@ auto read_any() {
   constexpr auto foo = rtl::MHz<rtl::q32>{{100.0f}};
   constexpr auto bar = rtl::Hz<rtl::q32>{foo};
 
-  /*
-  sys::debug(uart, std::pair{"%10s", bar.value().numerator()});
-  sys::debug(uart, std::pair{"", " / "});
-  sys::debug(uart, std::pair{"%10s", bar.value().denominator()});
-  sys::debug(uart, std::pair{"", "\r\n"});
-
-  sys::debug(uart,
-     std::pair{"%10s", "FRAC = "},
-     std::pair{"%10s", y.numerator()},
-     std::pair{"%10s", " / "},
-     std::pair{"%10s", y.denominator()},
-     std::pair{"%10s", "\r\n"});
-  */
-
-  uart.write(sys::debug(std::pair{"10s", "HELLO WORLD!!!"}, std::pair{"", "some text"})).wait();
-
+  uart.write(sys::format(std::pair{"10s", "HELLO WORLD!!!"}, std::pair{"", y.denominator()}, std::pair{"", y.numerator()})).wait();
+  
   //output.drive_low();
 
   rtl::assert<x + (y - x) - 2.5f <= x + x>("test");
