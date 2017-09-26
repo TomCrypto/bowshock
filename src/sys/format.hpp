@@ -11,7 +11,7 @@ namespace sys {
 
 namespace detail {
 
-auto write_str(const char* buf) {
+inline auto write_str(const char* buf) {
   return [buf, index = std::size_t{0}](rtl::u8& data) mutable {
     if (buf[index] == '\0') {
       return rtl::waitable::status::complete;
@@ -22,7 +22,7 @@ auto write_str(const char* buf) {
   };
 }
 
-auto write_int(rtl::i64 n) {
+inline auto write_int(rtl::i64 n) {
   static char buffer[32] = {};
   std::size_t pos = 31;
 
