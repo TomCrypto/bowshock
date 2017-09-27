@@ -34,12 +34,12 @@ public:
   constexpr interrupt_context() {}
 
   /// @brief Resets the context pointer. If none is passed, the interrupt context becomes invalid.
-  auto reset (void* context = nullptr) {
+  auto reset(void* context = nullptr) {
     this->context = context;
   }
 
   /// @brief Returns whether the interrupt context contains a valid (initialized) state.
-  auto valid () {
+  auto valid() const {
     return context != nullptr;
   }
 

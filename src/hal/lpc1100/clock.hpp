@@ -170,4 +170,31 @@ public:
   }
 };
 
+/// @brief The UART peripheral clock.
+template <> class clock<clock_source::uart> {
+private:
+  static auto SYSAHBCLKCTRL() { return rtl::mmio<rtl::u32>{0x40048080}; }
+  static auto UARTCLKDIV() { return rtl::mmio<rtl::u32>{0x40048098}; }
+
+public:
+  static auto frequency() {
+    auto divider = UARTCLKDIV().read<0b11111111>();
+    return clock<clock_source::main>::frequency() / rtl::frequency{divider};
+  }
+
+  static auto set_divider(rtl::u8 divider) {
+    rtl::assert(divider != 0, TRACE("UART clock enabled with zero divider"));
+    UARTCLKDIV().write<0b11111111>(divider);
+  }
+
+  static auto enable(rtl::u8 divider = 1) {
+    set_divider(divider);
+    SYSAHBCLKCTRL().set_bit<12>();
+  }
+
+  static auto disable() {
+    SYSAHBCLKCTRL().clear_bit<12>();
+  }
+};
+
 }

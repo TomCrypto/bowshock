@@ -15,9 +15,9 @@ namespace rtl
 
 #if defined(NO_ASSERT)
 #define TRACE(what) nullptr
-inline void assert(bool condition, const char* message) {}
-template <bool condition> constexpr void assert(const char* message) {}
-[[noreturn]] inline auto unreachable(const char* message) { /* do something reasonable */ }
+inline void assert(bool, const char*) {}
+template <bool> constexpr void assert(const char*) {}
+[[noreturn]] inline auto unreachable(const char*) { while (true); /* do something reasonable */ }
 #else
 
 /// @brief Decorates a string literal with the file and line where the macro is invoked.

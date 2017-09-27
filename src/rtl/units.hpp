@@ -120,7 +120,7 @@ private:
 };
 
 constexpr auto operator/(const frequency& a, const frequency& b) {
-  return a.hz() / b.hz();
+  return frequency{a.hz() / b.hz()};
 }
 
 constexpr frequency operator "" _KHz(unsigned long long value) {

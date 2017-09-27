@@ -10,8 +10,8 @@
 #include <hal/lpc1100/interrupt.hpp>
 #include <hal/lpc1100/clock.hpp>
 
-// TODO: for the clocks, potentially the UART constructor could take a "clock" object that it can attach the UART clock
-//       to, and also query to obtain its actual clock rate, so that the correct UART parameters can be constructed.
+// TODO: needs support for hardware flow control
+// (let's not bother with auto-baud or modem features)
 
 namespace hal::lpc1100 {
 
@@ -48,12 +48,10 @@ public:
 
   ~uart() {
     interrupt::disable(interrupt::type::uart);
+    clock<clock_source::uart>::disable();
 
-    // TODO: cancel both waitables, if present
-    //send.status = rtl::waitable<>::status::failed;
-    //recv.status = rtl::waitable<>::status::failed;
-
-    // TODO: disable UART clock
+    rtl::assert(!send_context.valid(), TRACE("still sending"));
+    rtl::assert(!recv_context.valid(), TRACE("still receiving"));
   }
 
 private:
@@ -61,19 +59,12 @@ private:
   static inline rtl::interrupt_context<rtl::u32> recv_context{};
 
   auto configure_uart(int baud_rate) {
-    auto core_clock = clock<clock_source::main>::frequency();
+    clock<clock_source::uart>::enable(); // divider is 1
 
-    // TODO: move these two to uart clock
-
-    LPC_SYSCON->SYSAHBCLKCTRL |= (1<<12);    //Enable UART clock
-    LPC_SYSCON->UARTCLKDIV = 0x01;    //Divide by 1
-
-    unsigned int regVal;
     unsigned int Fdiv;
 
     LPC_UART->LCR = 0x83;           //8 bits, no parity, 1 stop bit, DLAB(divisor latch access bit) = 1
-    regVal = LPC_SYSCON->UARTCLKDIV;
-    Fdiv = ((core_clock.hz()/regVal)/16)/baud_rate;    /*baud rate */
+    Fdiv = (clock<clock_source::uart>::frequency().hz()/16)/baud_rate;    /*baud rate */
 
     DLM().write(Fdiv / 256);
     DLL().write(Fdiv % 256);
@@ -94,7 +85,7 @@ private:
     auto fill_tx_queue() {
       for (auto i = 0; i < 16; ++i) {
         rtl::u8 data;
-  
+
         auto result = context(data);
 
         if (result == rtl::waitable::status::pending) {
