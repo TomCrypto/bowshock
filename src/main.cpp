@@ -84,6 +84,13 @@ auto read_any() {
     assert_signal();
   }
 
+  constexpr auto v1 = rtl::grams<rtl::q32>{5.0f};
+  //constexpr auto v2 = rtl::seconds<rtl::q32>{10.0f};
+  constexpr rtl::grams<rtl::q32> v2 = 5_grams * 5_grams;//rtl::my_quantity<rtl::q32, rtl::dimensionless>{rtl::q32{5.0f}};
+  constexpr auto v3 = v1 / v2;
+  //constexpr auto v4 = v1 * v3;
+  constexpr auto dimless = rtl::q32{v3};
+  
   auto output = output_pin(hal::logic_level::high);
   auto input = input_pin(input_pin::termination::pullup);
 

@@ -16,6 +16,7 @@
 #include <utility>
 #include <limits>
 #include <new>
+#include <ratio>
 /// @endcond
 
 extern "C" [[noreturn]] void abort();

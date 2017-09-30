@@ -111,11 +111,21 @@ public:
     this->q = approx.second;
   }
 
+  constexpr rational(long double x) {
+    auto approx = convergent_approximation(static_cast<double>(x));
+    this->p = approx.first;
+    this->q = approx.second;
+  }
+
   constexpr rational(S p, U q) : p(p), q(q) {
     if (q != 0) {
       rtl::assert(q != 0, "denominator must be nonzero");
     }
   }
+
+  constexpr rational(S x) : p(x), q(1) {}
+  
+  constexpr rational(unsigned long long int x) : p(static_cast<S>(x)), q(1) {}  
 
   template <typename U2, typename UD2, rational_mode mode2> constexpr rational(rational<U2, UD2, mode2> other) {
     using SD2 = typename std::make_signed<UD2>::type;
@@ -136,8 +146,6 @@ public:
       this->q = static_cast<U>(other.denominator());
     }
   }
-
-  constexpr rational(S x) : p(x), q(1) {}
 
   constexpr auto& operator+=(rational<U, UD, mode> rhs) {
     auto pd = static_cast<SD>(this->p) * static_cast<SD>(rhs.q)
@@ -394,5 +402,15 @@ using r16 = detail::rational<u16, u32, rational_mode::best>;
 using r32 = detail::rational<u32, u64, rational_mode::best>;
 using q16 = detail::rational<u16, u32, rational_mode::fast>;
 using q32 = detail::rational<u32, u64, rational_mode::fast>;
+
+}
+
+namespace std
+{
+
+template <> class numeric_limits<rtl::r16> : public std::numeric_limits<rtl::i16> {};
+template <> class numeric_limits<rtl::r32> : public std::numeric_limits<rtl::i32> {};
+template <> class numeric_limits<rtl::q16> : public std::numeric_limits<rtl::i16> {};
+template <> class numeric_limits<rtl::q32> : public std::numeric_limits<rtl::i32> {};
 
 }
