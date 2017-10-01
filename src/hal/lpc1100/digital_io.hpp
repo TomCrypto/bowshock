@@ -46,16 +46,14 @@ inline auto release_gpio() {
 }
 
 template <pin pin, rtl::uptr gpio_ptr, std::size_t port_no>
-class basic_digital_input : public hal::digital_input<basic_digital_input<pin, gpio_ptr, port_no>> {
-private:
-  hal::lpc1100::physical_io<pin> physical_io;
-
+class basic_digital_input : public hal::digital_input<basic_digital_input<pin, gpio_ptr, port_no>>,
+                            private hal::lpc1100::physical_io<pin> {
 public:
-  using termination = typename decltype(physical_io)::termination;
-  using options = typename decltype(physical_io)::digital_input_options;
+  using termination = typename hal::lpc1100::physical_io<pin>::termination;
+  using options = typename hal::lpc1100::physical_io<pin>::digital_input_options;
 
   basic_digital_input(termination termination, options options = options::none)
-    : physical_io(termination, options) {
+    : hal::lpc1100::physical_io<pin>(termination, options) {
     acquire_gpio();
     DIR().template clear<port_mask>();
   }
@@ -76,15 +74,13 @@ private:
 };
 
 template <pin pin, rtl::uptr gpio_ptr, std::size_t port_no>
-class basic_digital_output : public hal::digital_output<basic_digital_output<pin, gpio_ptr, port_no>> {
-private:
-  hal::lpc1100::physical_io<pin> physical_io;
-
+class basic_digital_output : public hal::digital_output<basic_digital_output<pin, gpio_ptr, port_no>>,
+                             private hal::lpc1100::physical_io<pin> {
 public:
-  using options = typename decltype(physical_io)::digital_output_options;
+  using options = typename hal::lpc1100::physical_io<pin>::digital_output_options;
 
   basic_digital_output(hal::logic_level initial_level, options options = options::none)
-    : physical_io(options) {
+    : hal::lpc1100::physical_io<pin>(options) {
     acquire_gpio();
     DIR().template set<port_mask>();
     this->drive(initial_level);
