@@ -48,12 +48,11 @@ inline auto release_gpio() {
 template <pin pin, rtl::uptr gpio_ptr, std::size_t port_no>
 class basic_digital_input : public hal::digital_input<basic_digital_input<pin, gpio_ptr, port_no>> {
 private:
-  using physical_io_t = typename hal::lpc1100::physical_io<pin>;
-  physical_io_t physical_io;
+  hal::lpc1100::physical_io<pin> physical_io;
 
 public:
-  using termination = typename physical_io_t::termination;
-  using options = typename physical_io_t::digital_input_options;
+  using termination = typename decltype(physical_io)::termination;
+  using options = typename decltype(physical_io)::digital_input_options;
 
   basic_digital_input(termination termination, options options = options::none)
     : physical_io(termination, options) {
@@ -79,11 +78,10 @@ private:
 template <pin pin, rtl::uptr gpio_ptr, std::size_t port_no>
 class basic_digital_output : public hal::digital_output<basic_digital_output<pin, gpio_ptr, port_no>> {
 private:
-  using physical_io_t = typename hal::lpc1100::physical_io<pin>;
-  physical_io_t physical_io;
+  hal::lpc1100::physical_io<pin> physical_io;
 
 public:
-  using options = typename physical_io_t::digital_output_options;
+  using options = typename decltype(physical_io)::digital_output_options;
 
   basic_digital_output(hal::logic_level initial_level, options options = options::none)
     : physical_io(options) {
