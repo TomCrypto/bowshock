@@ -91,61 +91,12 @@ public:
   constexpr explicit quantity(block_if_t<Dimension::is_dimensionless(), T> value) : value(value) {}
   constexpr quantity(block_unless_t<Dimension::is_dimensionless(), T> value) : value(value) {}
 
-  // TODO: this might cause problems...
-  /*
-  constexpr operator T() const {
-    static_assert(Dimension::template is_dimensionless(), "quantity is not dimensionless");
-
-    return value;
-  }
-  */
-
-  // TODO: replace this with some .as<dimension> template???
-
-  constexpr auto scalar() const {
-    static_assert(!Dimension::template is_dimensionless(), "quantity is dimensionless; use dimensionless() instead.");    
-
-    return value;
+  template <typename OtherDimension> constexpr auto in() const {
+    return quantity<T, OtherDimension>{*this};
   }
 
-  constexpr auto dimensionless() const {
-    static_assert(Dimension::template is_dimensionless(), "quantity is not dimensionless; use scalar() instead.");
-
-    using scale = typename Dimension::template conversion_factor<dimension<std::ratio<1>>>::value;
-
-    if constexpr (std::ratio_equal<scale, std::ratio<1>>::value) {
-      return value;
-    } else if constexpr (std::ratio_less<scale, std::ratio<1>>::value) {
-      // scale is less than 1 - consider dividing by the inverse
-      if constexpr (std::numeric_limits<i8>::min() <= scale::den / scale::num &&
-                    std::numeric_limits<i8>::max() >= scale::den / scale::num) {
-        return value / static_cast<i8>(scale::den / scale::num);
-      } else if constexpr (std::numeric_limits<i16>::min() <= scale::den / scale::num &&
-                            std::numeric_limits<i16>::max() >= scale::den / scale::num) {
-        return value / static_cast<i16>(scale::den / scale::num);
-      } else if constexpr (std::numeric_limits<i32>::min() <= scale::den / scale::num &&
-                            std::numeric_limits<i32>::max() >= scale::den / scale::num) {
-        return value / static_cast<i32>(scale::den / scale::num);
-      } else if constexpr (std::numeric_limits<i64>::min() <= scale::den / scale::num &&
-                            std::numeric_limits<i64>::max() >= scale::den / scale::num) {
-        return value / static_cast<i64>(scale::den / scale::num);
-      }
-    } else {
-      // scale is greater than 1 - just multiply by the scale
-      if constexpr (std::numeric_limits<i8>::min() <= scale::num / scale::den &&
-                    std::numeric_limits<i8>::max() >= scale::num / scale::den) {
-        return value * static_cast<i8>(scale::num / scale::den);
-      } else if constexpr (std::numeric_limits<i16>::min() <= scale::num / scale::den &&
-                            std::numeric_limits<i16>::max() >= scale::num / scale::den) {
-        return value * static_cast<i16>(scale::num / scale::den);
-      } else if constexpr (std::numeric_limits<i32>::min() <= scale::num / scale::den &&
-                            std::numeric_limits<i32>::max() >= scale::num / scale::den) {
-        return value * static_cast<i32>(scale::num / scale::den);
-      } else if constexpr (std::numeric_limits<i64>::min() <= scale::num / scale::den &&
-                            std::numeric_limits<i64>::max() >= scale::num / scale::den) {
-        return value * static_cast<i64>(scale::num / scale::den);
-      }
-    }
+  template <typename OtherDimension> constexpr auto as() const {
+    return quantity<T, OtherDimension>{*this}.value;
   }
 
   template <typename T2, typename OtherDimension>

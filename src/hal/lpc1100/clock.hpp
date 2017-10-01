@@ -108,7 +108,7 @@ public:
     auto SYSPLLSTAT = rtl::mmio<rtl::u32>{0x4004800C};
     auto PDRUNCFG = rtl::mmio<rtl::u32>{0x40048238};
 
-    SYSPLLCTRL.write<0b111111>((m.dimensionless() - 1) | p << 5);
+    SYSPLLCTRL.write<0b111111>((m.template as<rtl::dimensionless>() - 1) | p << 5);
     PDRUNCFG.clear<0b10000000>(); // power-up PLL
 
     while (SYSPLLSTAT.none<0b1>());    // wait for PLL lock

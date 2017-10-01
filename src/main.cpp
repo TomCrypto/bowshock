@@ -90,7 +90,7 @@ auto read_any() {
   constexpr auto v3 = v1 / v2;
   //constexpr auto v4 = v1 * v3;
   constexpr rtl::quantity<rtl::q32, rtl::kilogram::per<rtl::second>> v4 = v3;
-  constexpr auto scalar = v4.scalar(); // in kilograms/second
+  constexpr auto scalar = v4.template as<rtl::kilogram::per<rtl::second>>(); // in kilograms/second
   //constexpr auto scalar2 = rtl::my_quantity<rtl::q32, rtl::
   
   //constexpr auto x = rtl::q32<rtl::rational_mode::best>(1.666981f);

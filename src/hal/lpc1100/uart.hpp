@@ -61,13 +61,13 @@ private:
   template <typename T> auto configure_uart(T baud_rate) {
     clock<clock_source::uart>::enable(); // divider is 1
 
-    rtl::quantity<rtl::u32, rtl::hertz_> clock_hertz = clock<clock_source::uart>::frequency<rtl::u32>();
+    auto clock_hertz = clock<clock_source::uart>::frequency<rtl::u32>().in<rtl::hertz_>();
+    auto divisor = (clock_hertz / 16 / baud_rate).template as<rtl::dimensionless>();
 
     LPC_UART->LCR = 0x83;           //8 bits, no parity, 1 stop bit, DLAB(divisor latch access bit) = 1
-    auto Fdiv = (clock_hertz / 16 / baud_rate).dimensionless();    /*baud rate */
 
-    DLM().write(Fdiv / 256);
-    DLL().write(Fdiv % 256);
+    DLM().write(divisor / 256);
+    DLL().write(divisor % 256);
 
     LPC_UART->FDR = 0x00 | (1 << 4) | 0;
     LPC_UART->LCR = 0x03;        /* Diable latch access bit DLAB = 0 */
