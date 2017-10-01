@@ -32,7 +32,7 @@ private:
   static auto DLM() { return rtl::mmio_wo<rtl::u8>{0x40008004}; }
 
 public:
-  uart(int baud_rate) {
+  template <typename T> uart(rtl::quantity<T, rtl::hertz_> baud_rate) {
     configure_uart(baud_rate);
 
     interrupt::enable(interrupt::type::uart);
@@ -58,13 +58,13 @@ private:
   static inline rtl::interrupt_context<> send_context{};
   static inline rtl::interrupt_context<rtl::u32> recv_context{};
 
-  auto configure_uart(int baud_rate) {
+  template <typename T> auto configure_uart(T baud_rate) {
     clock<clock_source::uart>::enable(); // divider is 1
 
-    unsigned int Fdiv;
+    rtl::quantity<rtl::u32, rtl::hertz_> clock_hertz = clock<clock_source::uart>::frequency<rtl::u32>();
 
     LPC_UART->LCR = 0x83;           //8 bits, no parity, 1 stop bit, DLAB(divisor latch access bit) = 1
-    Fdiv = (clock<clock_source::uart>::frequency().hz()/16)/baud_rate;    /*baud rate */
+    auto Fdiv = (clock_hertz / 16 / baud_rate).dimensionless();    /*baud rate */
 
     DLM().write(Fdiv / 256);
     DLL().write(Fdiv % 256);

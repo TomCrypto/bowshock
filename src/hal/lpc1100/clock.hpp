@@ -30,7 +30,7 @@ template <clock_source source> class clock;
 /// @brief The internal IRC oscillator clock.
 template <> class clock<clock_source::irc> {
 public:
-  static auto frequency() { return rtl::frequency{12000000}; }
+  template <typename T> static auto frequency() { return 12_MHz; }
 
   static auto disable() {
     // TODO: IRC_PD
@@ -45,16 +45,16 @@ public:
 
 template <> class clock<clock_source::pll_in> {
 public:
-  static auto frequency() {
+  template <typename T> static auto frequency() {
     auto SYSPLLCLKSEL = rtl::mmio<rtl::u32>{0x40048040};
 
     switch (SYSPLLCLKSEL.read<0b1>()) {
       case 0b0:
-        return clock<clock_source::irc>::frequency();
+        return clock<clock_source::irc>::frequency<T>();
       case 0b1:
         //return clock<clock_source::system>::frequency();
       default:
-        return rtl::frequency::none();
+        rtl::unreachable(TRACE("invalid clock configuration"));
     }
   }
 
@@ -80,37 +80,35 @@ public:
 
 template <> class clock<clock_source::pll_out> {
 public:
-  static auto frequency() {
+  template <typename T> static auto frequency() {
     auto SYSPLLCTRL = rtl::mmio<rtl::u32>{0x40048008};
 
     auto m = SYSPLLCTRL.read<0b11111>() + 1;
 
-    return rtl::frequency{m} * clock<clock_source::pll_in>::frequency();
+    return m * clock<clock_source::pll_in>::frequency<T>();
   }
 
-  static auto enable(rtl::u32 frequency) {
+  template <typename T> static auto enable(T frequency) {
     // TODO: configure PLL accordingly somehow (this is probably incomplete)
 
-    auto frequency_in = clock<clock_source::pll_in>::frequency();
+    auto frequency_in = clock<clock_source::pll_in>::frequency<rtl::u32>();
 
     // calculate PLL parameters
-    auto m = frequency / frequency_in.hz();                // M is the PLL multiplier
-    auto fcco = m * frequency_in.hz() * 2;                 // FCCO is the internal PLL frequency
-
-    frequency = frequency_in.hz() * m;
+    auto m = frequency / frequency_in;                // M is the PLL multiplier
+    auto fcco = frequency_in * 2 * m;                 // FCCO is the internal PLL frequency
 
     auto p = 0;
 
-    while (fcco < 156000000) {
-        fcco *= 2;
-        p++;                                // find P which gives FCCO in the allowed range (over 156MHz)
+    while (fcco < 156_MHz) {
+      fcco = fcco * 2;
+      p++;                                // find P which gives FCCO in the allowed range (over 156MHz)
     }
 
     auto SYSPLLCTRL = rtl::mmio<rtl::u32>{0x40048008};
     auto SYSPLLSTAT = rtl::mmio<rtl::u32>{0x4004800C};
     auto PDRUNCFG = rtl::mmio<rtl::u32>{0x40048238};
 
-    SYSPLLCTRL.write<0b111111>((m - 1) | p << 5);
+    SYSPLLCTRL.write<0b111111>((m.dimensionless() - 1) | p << 5);
     PDRUNCFG.clear<0b10000000>(); // power-up PLL
 
     while (SYSPLLSTAT.none<0b1>());    // wait for PLL lock
@@ -127,20 +125,20 @@ public:
 /// @remarks This clock cannot be powered down while the system is running.
 template <> class clock<clock_source::main> {
 public:
-  static auto frequency() {
+  template <typename T> static auto frequency() {
     auto MAINCLKSEL = rtl::mmio<rtl::u32>{0x40048070};
 
     switch (MAINCLKSEL.read<0b11>()) {
       case 0b00:
-        return clock<clock_source::irc>::frequency();
+        return clock<clock_source::irc>::frequency<T>();
       case 0b01:
-        return clock<clock_source::pll_in>::frequency();
+        return clock<clock_source::pll_in>::frequency<T>();
       case 0b10:
         //return clock<clock_source::watchdog_osc>::frequency();
       case 0b11:
-        return clock<clock_source::pll_out>::frequency();
+        return clock<clock_source::pll_out>::frequency<T>();
       default:
-        return rtl::frequency::none();
+        rtl::unreachable(TRACE("invalid clock configuration"));
     }
   }
 
@@ -177,9 +175,9 @@ private:
   static auto UARTCLKDIV() { return rtl::mmio<rtl::u32>{0x40048098}; }
 
 public:
-  static auto frequency() {
+  template <typename T> static auto frequency() {
     auto divider = UARTCLKDIV().read<0b11111111>();
-    return clock<clock_source::main>::frequency() / rtl::frequency{divider};
+    return clock<clock_source::main>::frequency<T>() / divider;
   }
 
   static auto set_divider(rtl::u8 divider) {

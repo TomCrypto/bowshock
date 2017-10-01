@@ -68,8 +68,8 @@ auto read_any() {
 }
 
 [[noreturn]] void main(const dev::reset_context& context) {
-  auto frequency = 48000000;
-  flash_access_time(frequency);           // configure flash access time first
+  auto frequency = 48_MHz;
+  flash_access_time(48000000);           // configure flash access time first
 
   // set the main clock
   dev::clock<dev::clock_source::pll_in>::set_source(dev::clock_source::irc);
@@ -78,7 +78,7 @@ auto read_any() {
 
   LPC_SYSCON->SYSAHBCLKDIV = 1;           // set AHB clock divider to 1
 
-  auto uart = dev::uart0(9600);
+  auto uart = dev::uart0(9600_Hz);
 
   if (context.event == dev::reset_event::assert) {
     assert_signal();
@@ -86,24 +86,25 @@ auto read_any() {
 
   constexpr auto v1 = rtl::grams<rtl::q32>{5.0f};
   //constexpr auto v2 = rtl::seconds<rtl::q32>{10.0f};
-  constexpr rtl::grams<rtl::q32> v2 = 5_grams * 5_grams;//rtl::my_quantity<rtl::q32, rtl::dimensionless>{rtl::q32{5.0f}};
+  constexpr auto v2 = 5_milliseconds;//rtl::my_quantity<rtl::q32, rtl::dimensionless>{rtl::q32{5.0f}};
   constexpr auto v3 = v1 / v2;
   //constexpr auto v4 = v1 * v3;
-  constexpr auto dimless = rtl::q32{v3};
+  constexpr rtl::quantity<rtl::q32, rtl::kilogram::per<rtl::second>> v4 = v3;
+  constexpr auto scalar = v4.scalar(); // in kilograms/second
+  //constexpr auto scalar2 = rtl::my_quantity<rtl::q32, rtl::
   
-  auto output = output_pin(hal::logic_level::high);
-  auto input = input_pin(input_pin::termination::pullup);
-
   //constexpr auto x = rtl::q32<rtl::rational_mode::best>(1.666981f);
   constexpr auto x = rtl::r32(18481.38438f);
   constexpr auto y = rtl::r32(3.1415926535897932384626433832795);
 
   uart.read(read_any()).wait();
 
+  /*
   constexpr auto foo = rtl::MHz<rtl::q32>{{100.0f}};
   constexpr auto bar = rtl::Hz<rtl::q32>{foo};
+  */
 
-  uart.write(sys::format(std::pair{"10s", "HELLO WORLD!!!"}, std::pair{"", y.denominator()}, std::pair{"", y.numerator()})).wait();
+  uart.write(sys::format(std::pair{"", scalar.numerator()}, std::pair{"10s", "/"}, std::pair{"", scalar.denominator()})).wait();
   
   //output.drive_low();
 
@@ -156,6 +157,9 @@ auto read_any() {
     for (auto i = 0; i < 0xFFFF; ++i) { __NOP(); };
   }
   */
+
+  auto output = output_pin(hal::logic_level::high);
+  auto input = input_pin(input_pin::termination::pullup);
 
   while (true) {
     for (auto i = 0; i < 0x1FFFFF; ++i) {

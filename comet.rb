@@ -9,7 +9,7 @@ cppflags = proc do
   option :Wpedantic
   option :pedantic
   option :g
-  option :Oz
+  option :O3
   option 'fno-use-cxa-atexit'
 end
 
