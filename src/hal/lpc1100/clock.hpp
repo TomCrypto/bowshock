@@ -29,15 +29,18 @@ template <clock_source source> class clock;
 
 /// @brief The internal IRC oscillator clock.
 template <> class clock<clock_source::irc> {
+private:
+  static auto PDRUNCFG() { return rtl::mmio<rtl::u32>{0x40048238}; }
+
 public:
   template <typename T> static auto frequency() { return 12_MHz; }
 
   static auto disable() {
-    // TODO: IRC_PD
+    PDRUNCFG().set<0b11>();
   }
 
   static auto enable() {
-    // TODO: IRC_PD
+    PDRUNCFG().clear<0b11>();
   }
 };
 
