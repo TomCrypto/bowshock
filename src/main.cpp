@@ -84,9 +84,9 @@ auto read_any() {
     assert_signal();
   }
 
-  constexpr auto v1 = rtl::grams<rtl::q32>{5.0f};
+  constexpr auto v1 = rtl::quantity<rtl::q32, rtl::gram>{5.0f};
   //constexpr auto v2 = rtl::seconds<rtl::q32>{10.0f};
-  constexpr auto v2 = 5_milliseconds;//rtl::my_quantity<rtl::q32, rtl::dimensionless>{rtl::q32{5.0f}};
+  constexpr auto v2 = 5_ms;//rtl::my_quantity<rtl::q32, rtl::dimensionless>{rtl::q32{5.0f}};
   constexpr auto v3 = v1 / v2;
   //constexpr auto v4 = v1 * v3;
   constexpr rtl::quantity<rtl::q32, rtl::kilogram::per<rtl::second>> v4 = v3;
@@ -99,7 +99,7 @@ auto read_any() {
 
   uart.read(read_any()).wait();
 
-  auto uart_clock = dev::clock<dev::clock_source::uart>::frequency<int>().as<rtl::hertz_>();
+  auto uart_clock = dev::clock<dev::clock_source::uart>::frequency<int>().as<rtl::hertz>();
   
   /*
   constexpr auto foo = rtl::MHz<rtl::q32>{{100.0f}};
@@ -107,7 +107,7 @@ auto read_any() {
   */
 
   //uart.write(sys::format(std::pair{"", uart_clock.numerator()}, std::pair{"10s", "/"}, std::pair{"", uart_clock.denominator()})).wait();
-  uart.write(sys::format(std::pair{"", uart_clock}));
+  uart.write(sys::format(std::pair{"", uart_clock})).wait();
 
   //output.drive_low();
 

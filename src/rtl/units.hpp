@@ -195,9 +195,11 @@ constexpr auto operator/(T2 lhs, quantity<T, Dimension> rhs) {
 
 }
 
-#define EXPAND(L, M, T, I, O, N, J, B)                      \
-std::ratio<L>, std::ratio<M>, std::ratio<T>, std::ratio<I>, \
-std::ratio<O>, std::ratio<N>, std::ratio<J>, std::ratio<B>
+namespace rtl {
+
+#define EXPAND(L, M, T, I, O, N, J, B)                                                                                 \
+  std::ratio<L>, std::ratio<M>, std::ratio<T>, std::ratio<I>,                                                          \
+  std::ratio<O>, std::ratio<N>, std::ratio<J>, std::ratio<B>
 
 #define DIMENSIONLESS             EXPAND( 0,  0,  0,  0,  0,  0,  0,  0)
 #define LENGTH                    EXPAND(+1,  0,  0,  0,  0,  0,  0,  0)
@@ -211,17 +213,6 @@ std::ratio<O>, std::ratio<N>, std::ratio<J>, std::ratio<B>
 #define VELOCITY                  EXPAND(+1, -1,  0,  0,  0,  0,  0,  0)
 #define ACCELERATION              EXPAND(+1, -2,  0,  0,  0,  0,  0,  0)
 #define FREQUENCY                 EXPAND( 0, -1,  0,  0,  0,  0,  0,  0)
-
-#define DEFINE_UNIT(NAME, DIMENSION) template <typename T> using NAME = quantity<T, DIMENSION>
-#define DEFINE_ABBREV(NAME, UNIT)\
-  constexpr auto operator"" _##NAME(long double value) {\
-    return rtl::UNIT<decltype(value)>{value};\
-  }\
-  constexpr auto operator"" _##NAME(unsigned long long int value) {\
-    return rtl::UNIT<decltype(value)>{value};\
-  }\
-
-namespace rtl {
 
 using dimensionless = dimension<std::ratio<1>, DIMENSIONLESS>;
 using meter         = dimension<std::ratio<1>, LENGTH>;
@@ -238,9 +229,9 @@ using megabit       = dimension<std::mega, INFORMATION>;
 using gibibit       = dimension<std::ratio<1024 * 1024 * 1024>, INFORMATION>;
 using gigabit       = dimension<std::giga, INFORMATION>;
 
-using hertz_        = dimension<std::ratio<1>, FREQUENCY>;
-using kilohertz_    = dimension<std::kilo, FREQUENCY>;
-using megahertz_    = dimension<std::mega, FREQUENCY>;
+using hertz         = dimension<std::ratio<1>, FREQUENCY>;
+using kilohertz     = dimension<std::kilo, FREQUENCY>;
+using megahertz     = dimension<std::mega, FREQUENCY>;
 
 using nanosecond    = dimension<std::nano, TIME>;
 using microsecond   = dimension<std::micro, TIME>;
@@ -250,31 +241,6 @@ using minute        = dimension<std::ratio<60>, TIME>;
 using hour          = dimension<std::ratio<3600>, TIME>;
 using day           = dimension<std::ratio<3600 * 24>, TIME>;
 
-DEFINE_UNIT(scalar, dimensionless);
-DEFINE_UNIT(meters, meter);
-DEFINE_UNIT(kilometers, kilometer);
-DEFINE_UNIT(grams, gram);
-DEFINE_UNIT(milliseconds, millisecond);
-DEFINE_UNIT(seconds, second);
-DEFINE_UNIT(bits, bit);
-DEFINE_UNIT(hertz, hertz_);
-DEFINE_UNIT(kilohertz, kilohertz_);
-DEFINE_UNIT(megahertz, megahertz_);
-
-}
-
-DEFINE_ABBREV(meters, meters);
-DEFINE_ABBREV(kilometers, kilometers);
-DEFINE_ABBREV(grams, grams);
-DEFINE_ABBREV(milliseconds, milliseconds);
-DEFINE_ABBREV(seconds, seconds);
-DEFINE_ABBREV(scalar, scalar);
-DEFINE_ABBREV(Hz, hertz);
-DEFINE_ABBREV(KHz, kilohertz);
-DEFINE_ABBREV(MHz, megahertz);
-
-#undef DEFINE_UNIT
-#undef DEFINE_ABBREV
 #undef EXPAND
 #undef DIMENSIONLESS
 #undef LENGTH
@@ -285,3 +251,24 @@ DEFINE_ABBREV(MHz, megahertz);
 #undef MOLE
 #undef CANDELA
 #undef INFORMATION
+
+}
+
+#define DEFINE_ABBREV(NAME, UNIT)                                                                                      \
+  constexpr auto operator"" _##NAME(long double value) {                                                               \
+    return rtl::quantity<decltype(value), rtl::UNIT>{value};                                                           \
+  }                                                                                                                    \
+  constexpr auto operator"" _##NAME(unsigned long long int value) {                                                    \
+    return rtl::quantity<decltype(value), rtl::UNIT>{value};                                                           \
+  }
+
+DEFINE_ABBREV(m, meter)
+DEFINE_ABBREV(km, kilometer)
+DEFINE_ABBREV(g, gram)
+DEFINE_ABBREV(ms, millisecond)
+DEFINE_ABBREV(s, second)
+DEFINE_ABBREV(Hz, hertz)
+DEFINE_ABBREV(KHz, kilohertz)
+DEFINE_ABBREV(MHz, megahertz)
+
+#undef DEFINE_ABBREV

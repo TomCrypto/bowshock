@@ -34,7 +34,7 @@ private:
   static auto FDR() { return rtl::mmio_rw<rtl::u8>{0x40008028}; }
 
 public:
-  template <typename T> uart(rtl::quantity<T, rtl::hertz_> baud_rate) {
+  template <typename T> uart(rtl::quantity<T, rtl::hertz> baud_rate) {
     configure_uart(baud_rate);
 
     interrupt::enable(interrupt::type::uart);
@@ -63,7 +63,7 @@ private:
   template <typename T> auto configure_uart(T baud_rate) {
     clock<clock_source::uart>::enable(); // divider is 1
 
-    auto clock_hertz = clock<clock_source::uart>::frequency<rtl::u32>().in<rtl::hertz_>();
+    auto clock_hertz = clock<clock_source::uart>::frequency<rtl::u32>().in<rtl::hertz>();
     auto divisor = (clock_hertz / 16 / baud_rate).template as<rtl::dimensionless>();
 
     LCR().write(0b10000000); // enable latches
