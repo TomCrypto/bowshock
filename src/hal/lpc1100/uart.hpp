@@ -112,7 +112,13 @@ private:
           LSR().read();
           IER().template set<0b10>();
           break;
-        default:
+        case rtl::waitable::status::complete:
+          LSR().read();
+          IER().template set<0b10>();
+          completing = true;
+          status = rtl::waitable::status::pending;
+          break;
+        case rtl::waitable::status::failed:
           IER().template clear<0b10>();
       }
     }
@@ -140,11 +146,21 @@ private:
     }
 
     auto interrupt() {
+      if (completing) {
+        status = rtl::waitable::status::complete;
+        IER().template clear<0b10>();
+        return;
+      }
+
       auto result = fill_tx_queue();
 
       if (result != rtl::waitable::status::pending) {
-        IER().template clear<0b10>();
-        status = result;
+        if (result == rtl::waitable::status::complete) {
+          completing = true;
+        } else {
+          IER().template clear<0b10>();
+          status = result;
+        }
       }
     }
 
@@ -154,6 +170,7 @@ private:
 
   private:
     rtl::waitable::status status;
+    bool completing{false};
     T context;
   };
 

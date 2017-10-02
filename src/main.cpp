@@ -100,66 +100,13 @@ auto read_any() {
   uart.read(read_any()).wait();
 
   auto uart_clock = dev::clock<dev::clock_source::uart>::frequency<int>().as<rtl::hertz>();
-  
-  /*
-  constexpr auto foo = rtl::MHz<rtl::q32>{{100.0f}};
-  constexpr auto bar = rtl::Hz<rtl::q32>{foo};
-  */
+  auto irc_clock = dev::clock<dev::clock_source::irc>::frequency<int>().as<rtl::megahertz>();
 
   //uart.write(sys::format(std::pair{"", uart_clock.numerator()}, std::pair{"10s", "/"}, std::pair{"", uart_clock.denominator()})).wait();
-  uart.write(sys::format(std::pair{"", uart_clock})).wait();
-
-  //output.drive_low();
+  uart.write(sys::format(std::pair{"", uart_clock}, std::pair{"", "Hz"})).wait();
+  uart.write(sys::format(std::pair{"", irc_clock}, std::pair{"", "MHz"})).wait();
 
   rtl::assert<x + (y - x) - 2.5f <= x + x>("test");
-
-  //output.drive_high();  
-
-  #if 0
-  const char map[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-  char buf[8];
-
-  auto x = uart.read({buf, 1});
-  x.wait();
-
-  int test;
-
-  for (auto i = 0; i < 8; ++i) {
-      buf[7 - i] = map[((0x10000400 - ((rtl::uptr)&test)) >> (4 * i)) & 0xF];
-  }
-
-  uart.write({buf, sizeof(buf)}).wait();
-  #endif
-
-  //auto gpio2 = dev::gpio2<dev::pin::PIO0_8>(/* termination, interrupt settings, etc.. */);
-  //auto uart = dev::uart<dev::pin::PIO1_7, dev::pin::PIO1_6>(/* uart settings */);
-
-  /*
-  while (true) {
-    char buffer[32];
-    std::size_t pos = 0;
-    std::size_t offset = 0;
-
-    uart.read(read_until(buffer, pos, '\r')).wait();
-
-    uart.write([&](rtl::u8& data) {
-      if (offset == pos) {
-          return true;
-      }
-
-      data = buffer[offset++];
-      return false;
-    }).wait();
-  }
-  */
-
-  /*
-  while (true) {
-    uart.send("hello\r\n", 7);
-
-    for (auto i = 0; i < 0xFFFF; ++i) { __NOP(); };
-  }
-  */
 
   auto output = output_pin(hal::logic_level::high);
   auto input = input_pin(input_pin::termination::pullup);
