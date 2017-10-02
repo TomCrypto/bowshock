@@ -18,7 +18,7 @@ inline constexpr auto sequence() {
 }
 
 template <typename G1> constexpr auto sequence(G1 g1) {
-  return [f1 = g1()](auto&&... args) { return f1(std::forward<decltype(args)>(args)...); };
+  return [f1 = g1()](auto&&... args) mutable { return f1(std::forward<decltype(args)>(args)...); };
 }
 
 /// @brief Sequence primitive.

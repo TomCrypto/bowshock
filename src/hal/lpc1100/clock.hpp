@@ -33,7 +33,7 @@ private:
   static auto PDRUNCFG() { return rtl::mmio<rtl::u32>{0x40048238}; }
 
 public:
-  template <typename T> static auto frequency() { return 12_MHz; }
+  template <typename T> static auto frequency() { return rtl::quantity<T, rtl::megahertz_>{12}; }
 
   static auto disable() {
     PDRUNCFG().set<0b11>();

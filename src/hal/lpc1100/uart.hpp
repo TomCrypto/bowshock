@@ -30,6 +30,8 @@ private:
   static auto THR() { return rtl::mmio_wo<rtl::u8>{0x40008000}; }
   static auto DLL() { return rtl::mmio_wo<rtl::u8>{0x40008000}; }
   static auto DLM() { return rtl::mmio_wo<rtl::u8>{0x40008004}; }
+  static auto LCR() { return rtl::mmio_rw<rtl::u8>{0x4000800C}; }
+  static auto FDR() { return rtl::mmio_rw<rtl::u8>{0x40008028}; }
 
 public:
   template <typename T> uart(rtl::quantity<T, rtl::hertz_> baud_rate) {
@@ -64,16 +66,15 @@ private:
     auto clock_hertz = clock<clock_source::uart>::frequency<rtl::u32>().in<rtl::hertz_>();
     auto divisor = (clock_hertz / 16 / baud_rate).template as<rtl::dimensionless>();
 
-    LPC_UART->LCR = 0x83;           //8 bits, no parity, 1 stop bit, DLAB(divisor latch access bit) = 1
+    LCR().write(0b10000000); // enable latches
 
     DLM().write(divisor / 256);
     DLL().write(divisor % 256);
 
-    LPC_UART->FDR = 0x00 | (1 << 4) | 0;
-    LPC_UART->LCR = 0x03;        /* Diable latch access bit DLAB = 0 */
-    LPC_UART->FCR = 0x07 | (0x3 << 6);        /* Enable and reset TX and RX FIFO. */
+    FDR().write(0b00010000); // mul = 1, divadd = 0 (no fractional divider)
+    LCR().write(0b00000011); // 8 bit words, 1 stop bit, no parity, disable latches
 
-    //LPC_UART->FCR = (1 << 2);
+    FCR().template set<0b11000111>(); // 2 MSBs are the RX FIFO trigger level (here set to 0b11 = 14 characters)
   }
 
   template <typename T> struct send_waitable : private rtl::noncopyable {

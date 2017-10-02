@@ -99,13 +99,16 @@ auto read_any() {
 
   uart.read(read_any()).wait();
 
+  auto uart_clock = dev::clock<dev::clock_source::uart>::frequency<int>().as<rtl::hertz_>();
+  
   /*
   constexpr auto foo = rtl::MHz<rtl::q32>{{100.0f}};
   constexpr auto bar = rtl::Hz<rtl::q32>{foo};
   */
 
-  uart.write(sys::format(std::pair{"", scalar.numerator()}, std::pair{"10s", "/"}, std::pair{"", scalar.denominator()})).wait();
-  
+  //uart.write(sys::format(std::pair{"", uart_clock.numerator()}, std::pair{"10s", "/"}, std::pair{"", uart_clock.denominator()})).wait();
+  uart.write(sys::format(std::pair{"", uart_clock}));
+
   //output.drive_low();
 
   rtl::assert<x + (y - x) - 2.5f <= x + x>("test");

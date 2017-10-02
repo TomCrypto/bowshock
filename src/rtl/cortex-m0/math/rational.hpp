@@ -125,7 +125,9 @@ public:
 
   constexpr rational(S x) : p(x), q(1) {}
   
-  constexpr rational(unsigned long long int x) : p(static_cast<S>(x)), q(1) {}  
+  constexpr rational(U x) : p(static_cast<S>(x)), q(1) {}
+
+  constexpr rational(unsigned long long int x) : p(static_cast<S>(x)), q(1) {}
 
   template <typename U2, typename UD2, rational_mode mode2> constexpr rational(rational<U2, UD2, mode2> other) {
     using SD2 = typename std::make_signed<UD2>::type;
