@@ -27,22 +27,22 @@ inline auto SYSAHBCLKCTRL() { return rtl::mmio<rtl::u32>{0x40048080}; }
 // which can monitor exactly which resources are used and turn the clocks on and off accordingly?
 // this would have to be an internal object somehow
 
-static inline int gpio_refcount = 0;
+//static inline int gpio_refcount = 0;
 
 inline auto acquire_gpio() {
-  rtl::intrinsics::non_preemptible([](){
+  /*rtl::intrinsics::non_preemptible([](){
     if (gpio_refcount++ == 0) {
       SYSAHBCLKCTRL().set_bit<6>();
     }
-  });
+  });*/
 }
 
 inline auto release_gpio() {
-  rtl::intrinsics::non_preemptible([](){
+  /*rtl::intrinsics::non_preemptible([](){
     if (--gpio_refcount == 0) {
       SYSAHBCLKCTRL().clear_bit<6>();
     }
-  });
+  });*/
 }
 
 template <pin pin, rtl::uptr gpio_ptr, std::size_t port_no>

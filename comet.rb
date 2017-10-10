@@ -32,6 +32,14 @@ software 'control-firmware', depends: ['control', 'hal'] do
   end
 end
 
+software 'test', depends: ['hal'] do
+  source language: :cpp, headers: ['src', *headers] do
+    import 'spec/breadboard/board.cpp'
+
+    inject &cppflags
+  end
+end
+
 hardware 'control', targets: :lpc1100 do
   source language: :cpp, headers: ['src', *headers] do
     import 'src/app/control/lpc1100.cpp'
@@ -94,5 +102,13 @@ firmware 'control-firmware', imports: ['control-firmware'] do
     elf 'bin/control-firmware.elf'
     bin 'bin/control-firmware.bin'
     map 'bin/control-firmware.map'
+  end
+end
+
+firmware 'test', imports: ['test'] do
+  target :lpc1100 do
+    elf 'bin/test-firmware.elf'
+    bin 'bin/test-firmware.bin'
+    map 'bin/test-firmware.map'
   end
 end

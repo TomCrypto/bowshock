@@ -1,3 +1,5 @@
 .comet
+.vscode
 doc/
 bin/
+spec/**/board_links.yml

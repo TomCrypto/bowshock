@@ -1,0 +1,12 @@
+require: rubocop-rspec
+
+Layout/EndOfLine:
+  EnforcedStyle: lf
+
+Metrics/BlockLength:
+  Exclude:
+    - '**/*_spec.rb'
+
+Style/Documentation:
+  Exclude:
+    - '**/board.rb'

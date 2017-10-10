@@ -92,11 +92,11 @@ private:
         if (result == rtl::waitable::status::pending) {
           THR().write(data);
         } else {
-          return result;
+          return std::pair{i != 0, result};
         }
       }
   
-      return rtl::waitable::status::pending;
+      return std::pair{true, rtl::waitable::status::pending};
     }
 
   public:
@@ -105,7 +105,8 @@ private:
 
       flush_tx_queue();
 
-      status = fill_tx_queue();
+      auto result = fill_tx_queue();
+      status = result.second;
 
       switch (status) {
         case rtl::waitable::status::pending:
@@ -113,10 +114,12 @@ private:
           IER().template set<0b10>();
           break;
         case rtl::waitable::status::complete:
-          LSR().read();
-          IER().template set<0b10>();
-          completing = true;
-          status = rtl::waitable::status::pending;
+          if (result.first) {
+            completing = true;
+            status = rtl::waitable::status::pending;
+            LSR().read();
+            IER().template set<0b10>();
+          }
           break;
         case rtl::waitable::status::failed:
           IER().template clear<0b10>();
@@ -154,12 +157,17 @@ private:
 
       auto result = fill_tx_queue();
 
-      if (result != rtl::waitable::status::pending) {
-        if (result == rtl::waitable::status::complete) {
-          completing = true;
+      if (result.second != rtl::waitable::status::pending) {
+        if (result.second == rtl::waitable::status::complete) {
+          if (result.first) {
+            completing = true;
+          } else {
+            IER().template clear<0b10>();
+            status = result.second;
+          }
         } else {
           IER().template clear<0b10>();
-          status = result;
+          status = result.second;
         }
       }
     }

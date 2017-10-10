@@ -11,7 +11,7 @@ namespace sys {
 
 namespace detail {
 
-inline auto write_str(const char* buf) {
+inline auto format_str(const char* buf) {
   return [buf, index = std::size_t{0}](rtl::u8& data) mutable {
     if (buf[index] == '\0') {
       return rtl::waitable::status::complete;
@@ -22,7 +22,7 @@ inline auto write_str(const char* buf) {
   };
 }
 
-inline auto write_int(rtl::i64 n) {
+inline auto format_int(rtl::i64 n) {
   static char buffer[32] = {};
   std::size_t pos = 31;
 
@@ -44,7 +44,7 @@ inline auto write_int(rtl::i64 n) {
     buffer[pos--] = '-';
   }
 
-  return write_str(buffer + pos + 1);
+  return format_str(buffer + pos + 1);
 }
 
 }
@@ -56,27 +56,27 @@ template <typename T> auto formatter(const std::pair<const char*, T>& fragment);
 
 /// @brief String debug formatter.
 template <> auto formatter<const char*>(const std::pair<const char*, const char*>& fragment) {
-  return detail::write_str(fragment.second);
+  return detail::format_str(fragment.second);
 }
 
 template <> auto formatter<unsigned int>(const std::pair<const char*, unsigned int>& fragment) {
-  return detail::write_int(fragment.second);
+  return detail::format_int(fragment.second);
 }
 
 template <> auto formatter<rtl::i16>(const std::pair<const char*, rtl::i16>& fragment) {
-  return detail::write_int(fragment.second);
+  return detail::format_int(fragment.second);
 }
 
 template <> auto formatter<rtl::u16>(const std::pair<const char*, rtl::u16>& fragment) {
-  return detail::write_int(fragment.second);
+  return detail::format_int(fragment.second);
 }
 
 template <> auto formatter<rtl::i32>(const std::pair<const char*, rtl::i32>& fragment) {
-  return detail::write_int(fragment.second);
+  return detail::format_int(fragment.second);
 }
 
 template <> auto formatter<rtl::i64>(const std::pair<const char*, rtl::i64>& fragment) {
-  return detail::write_int(fragment.second);
+  return detail::format_int(fragment.second);
 }
 
 namespace detail {
