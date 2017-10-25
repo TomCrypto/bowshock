@@ -1,5 +1,5 @@
 task :test do
-  sh 'bundle exec rspec --color --require spec_helper', verbose: false
+  sh 'bundle exec rspec --require spec_helper', verbose: false
 end
 
 task :lint do
