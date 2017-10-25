@@ -11,15 +11,15 @@ def deep_symbolize_keys(object)
   end
 end
 
+def links_by_name
+  Links.constants.map(&Links.method(:const_get)).map do |link|
+    [link::NAME, link]
+  end.to_h
+end
+
 def make_link(type:, args: {})
-  case type
-  when 'lpc21isp'
-    Link::LPC21ISP.new(**args)
-  when 'serial'
-    Link::Serial.new(**args)
-  else
-    raise "unknown link type #{type}"
-  end
+  raise "unknown link type '#{type}'" unless links_by_name.key? type
+  links_by_name[type].new(**args) # link type looked up dynamically
 end
 
 def load_links(file)
@@ -29,9 +29,11 @@ rescue Errno::ENOENT
   nil
 end
 
+LINK_FILE = 'board_links.yml'.freeze
+
 RSpec.shared_context 'Hardware Links', hardware: true do
   let(:location) { |example| example.metadata[:absolute_file_path] }
-  let(:links) { load_links "#{File.dirname location}/board_links.yml" }
+  let(:links) { load_links "#{File.dirname location}/#{LINK_FILE}" }
 
   before { skip 'links not configured' if links.nil? }
   after { links.values.each(&:stop) unless links.nil? }

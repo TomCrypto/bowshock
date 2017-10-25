@@ -1,9 +1,11 @@
 require 'rubyserial'
 require 'timeout'
 
-module Link
+module Links
   # This implements a basic byte-oriented link over a serial port.
   class Serial
+    NAME = 'serial'.freeze
+
     def initialize(port:, baud_rate:, timeout: 3)
       @port = port
       @baud_rate = baud_rate

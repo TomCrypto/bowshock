@@ -1,9 +1,11 @@
 require 'open3'
 
-module Link
+module Links
   # This flasher calls into the lpc21isp command-line tool to flash an LPC ARM
   # microcontroller from a serial port. The tool must be in the user's PATH.
   class LPC21ISP
+    NAME = 'lpc21isp'.freeze
+
     def initialize(port:, oscillator_frequency:,
                    baud_rate: 115_200, retries: 3)
       @port = port
