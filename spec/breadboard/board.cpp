@@ -1,7 +1,5 @@
 #define RTL_CORTEX_M0
 
-#include <rtl/platform.hpp>
-
 #include <hal/lpc1100/system.hpp>
 #include <hal/lpc1100/digital_io.hpp>
 #include <hal/lpc1100/uart.hpp>
@@ -20,6 +18,43 @@ struct test_params {
   dev::digital_input<input_pin>::termination input_termination;
 };
 
+void run_spec(spec::event_list<dev::uart0, test_params>& spec, const test_params& params) {
+  auto input = dev::digital_input<input_pin>{params.input_termination};
+
+  {
+    auto output = dev::digital_output<output_pin>{hal::logic_level::low};
+
+    spec.event("driven low");
+    output.drive_low();
+
+    if (input.state() == hal::logic_level::low) {
+      spec.event("read low");
+    } else {
+      spec.event("read high");
+    }
+
+    spec.event("driven high");
+    output.drive_high();
+
+    if (input.state() == hal::logic_level::low) {
+      spec.event("read low");
+    } else {
+      spec.event("read high");
+    }
+  }
+
+  {
+    auto not_driven = dev::digital_input<output_pin>{dev::digital_input<output_pin>::termination::none};
+    spec.event("not driven");
+
+    if (input.state() == hal::logic_level::low) {
+      spec.event("read low");
+    } else {
+      spec.event("read high");
+    }
+  }
+}
+
 [[noreturn]] void main(const dev::reset_context& context) {
   auto spec = spec::event_list<dev::uart0, test_params>{9600_Hz};
 
@@ -28,41 +63,8 @@ struct test_params {
   }
 
   while (true) {
-    spec.run([&](const auto& params){
-      auto input = dev::digital_input<input_pin>{params.input_termination};
-
-      {
-        auto output = dev::digital_output<output_pin>{hal::logic_level::low};
-
-        spec.event("driven low");
-        output.drive_low();
-
-        if (input.state() == hal::logic_level::low) {
-          spec.event("read low");
-        } else {
-          spec.event("read high");
-        }
-
-        spec.event("driven high");
-        output.drive_high();
-
-        if (input.state() == hal::logic_level::low) {
-          spec.event("read low");
-        } else {
-          spec.event("read high");
-        }
-      }
-
-      {
-        auto not_driven = dev::digital_input<output_pin>{dev::digital_input<output_pin>::termination::none};
-        spec.event("not driven");
-
-        if (input.state() == hal::logic_level::low) {
-          spec.event("read low");
-        } else {
-          spec.event("read high");
-        }
-      }
+    spec.run([&](auto&&... args) {
+      run_spec(spec, std::forward<decltype(args)>(args)...);
     });
   }
 }

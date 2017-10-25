@@ -6,7 +6,7 @@ module Protocols
   # newline-separated strings representing events logged by the device.
   class EventList
     def encode(bytes)
-      bytes # TODO: encode length as first 4 bytes or something?
+      bytes
     end
 
     def decode
