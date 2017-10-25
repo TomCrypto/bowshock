@@ -9,10 +9,6 @@ describe Breadboard, hardware: true do
     context 'with the input pin pulled down' do
       let(:params) { { termination: :pulldown } }
 
-      it 'completes successfully' do
-        expect(board.status).to be :ok
-      end
-
       it 'is driven as expected' do
         expect(board.events).to eq [
           'driven low',  'read low',
@@ -25,10 +21,6 @@ describe Breadboard, hardware: true do
     context 'with the input pin pulled up' do
       let(:params) { { termination: :pullup } }
 
-      it 'completes successfully' do
-        expect(board.status).to be :ok
-      end
-
       it 'is driven as expected' do
         expect(board.events).to eq [
           'driven low',  'read low',
@@ -40,10 +32,6 @@ describe Breadboard, hardware: true do
 
     context 'with the input pin in repeater mode' do
       let(:params) { { termination: :repeater } }
-
-      it 'completes successfully' do
-        expect(board.status).to be :ok
-      end
 
       it 'is driven as expected' do
         expect(board.events).to eq [

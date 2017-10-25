@@ -12,36 +12,42 @@ class Breadboard
     device.upload program
   end
 
-  def status
-    results.last.to_sym
-  end
-
   def events
-    results[0..-2]
+    results
   end
 
   private
+
+  def protocol
+    @protocol ||= Protocols::EventList.new
+  end
 
   def device
     @links[:device]
   end
 
-  def main
+  def link
     @links[:main]
   end
 
-  def unpack_bytes(bytes)
-    bytes.pack('C*').force_encoding('utf-8').split("\n")
-  end
-
   def results
-    unpack_bytes main.interact(Parameters.new(params).bytes)
+    decoder = protocol.decode
+    link.write protocol.encode payload
+
+    loop do
+      result = decoder.resume link.read(1).first
+      break result unless decoder.alive? # done
+    end
   end
 
   def params
     @params ||= {
       termination: TERMINATIONS.fetch(@options.fetch(:termination))
     }
+  end
+
+  def payload
+    Parameters.new(params).bytes
   end
 
   class Parameters < BinaryStruct

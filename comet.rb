@@ -33,7 +33,7 @@ software 'control-firmware', depends: ['control', 'hal'] do
 end
 
 software 'test', depends: ['hal'] do
-  source language: :cpp, headers: ['src', *headers] do
+  source language: :cpp, headers: ['src', 'spec/support', *headers] do
     import 'spec/breadboard/board.cpp'
 
     inject &cppflags

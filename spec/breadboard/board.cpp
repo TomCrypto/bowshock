@@ -9,7 +9,7 @@
 #include <hal/lpc1100/interrupt.hpp>
 #include <hal/lpc1100/clock.hpp>
 
-#include <sys/spec/standard.hpp>
+#include "protocols/event_list.hpp"
 
 namespace dev = hal::lpc1100;
 
@@ -21,7 +21,7 @@ struct test_params {
 };
 
 [[noreturn]] void main(const dev::reset_context& context) {
-  auto spec = sys::spec::standard<dev::uart0, test_params>{9600_Hz};
+  auto spec = spec::event_list<dev::uart0, test_params>{9600_Hz};
 
   if (context.event == dev::reset_event::assert) {
     spec.fail(context.assert.message);
@@ -29,10 +29,10 @@ struct test_params {
 
   while (true) {
     spec.run([&](const auto& params){
-      auto input = dev::digital_input<input_pin>(params.input_termination);
+      auto input = dev::digital_input<input_pin>{params.input_termination};
 
       {
-        auto output = dev::digital_output<output_pin>(hal::logic_level::low);
+        auto output = dev::digital_output<output_pin>{hal::logic_level::low};
 
         spec.event("driven low");
         output.drive_low();
@@ -54,7 +54,7 @@ struct test_params {
       }
 
       {
-        auto not_driven = dev::digital_input<output_pin>(dev::digital_input<output_pin>::termination::none);
+        auto not_driven = dev::digital_input<output_pin>{dev::digital_input<output_pin>::termination::none};
         spec.event("not driven");
 
         if (input.state() == hal::logic_level::low) {

@@ -1,16 +1,12 @@
 #pragma once
 
-/// @file
-///
-/// @brief Implementation of the Standard spec protocol.
-
 #include <rtl/base.hpp>
 #include <sys/format.hpp>
 
-namespace sys::spec
+namespace spec
 {
 
-template <typename T, typename Params> class standard : private T
+template <typename T, typename Params> class event_list : private T
 {
 public:
   using T::T;
@@ -20,23 +16,30 @@ public:
 
     this->read(buffer(static_cast<rtl::u8*>(static_cast<void*>(&params)), sizeof(Params))).wait();
     handler(params);
-    this->write(sys::format(std::pair{"", "ok"})).wait();
-    this->write(byte(0x00)).wait();
+    terminate_session();
   }
 
   // continuation function for a test that failed due to an assertion error or other hard fault
   auto fail(const char* message) {
-    this->write(sys::format(std::pair{"", message})).wait();
-    this->write(sys::format(std::pair{"", "\nfail"})).wait();
-    this->write(byte(0x00)).wait();
+    write_event(message);
+    write_event("\n");
+    terminate_session();
   }
 
   auto event(const char* message) {
-    this->write(sys::format(std::pair{"", message})).wait();
-    this->write(sys::format(std::pair{"", "\n"})).wait();
+    write_event(message);
+    write_event("\n");
   }
 
 private:
+  auto write_event(const char* event) {
+    this->write(sys::format(std::pair{"", event})).wait();
+  }
+
+  auto terminate_session() {
+    this->write(byte(0x00)).wait();
+  }
+
   auto byte(rtl::u8 byte) {
     return [byte, written = false](rtl::u8& data) mutable {
       if (written) {
@@ -44,16 +47,6 @@ private:
       } else {
         data = byte;
         written = true;
-        return rtl::waitable::status::pending;
-      }
-    };
-  }
-
-  auto until(rtl::u8 byte) {
-    return [byte](const rtl::u8& data) {
-      if (data == byte) {
-        return rtl::waitable::status::complete;
-      } else {
         return rtl::waitable::status::pending;
       }
     };
