@@ -78,7 +78,7 @@ public:
   /// @remarks This function will mask the bits of the argument with the mask prior to writing them. If you know that
   ///          the argument is fully covered by the mask already, call \c write() directly to avoid this overhead.
   template <T mask> auto safe_write(T bits) {
-    write(bits & mask);
+    *reg = (bits & mask) | (*reg & ~mask);
   }
 
   /// @brief Overwrites the entire register with the specified bits.
@@ -127,7 +127,7 @@ public:
   /// @brief Reads the given bit in the register.
   template <std::size_t bit> auto read_bit() const {
     static_assert(bit < sizeof(T) * 8, "bit out of range");
-    all<1 << bit>();
+    return all<1 << bit>();
   }
 
 private:

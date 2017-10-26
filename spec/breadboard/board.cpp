@@ -18,7 +18,7 @@ struct test_params {
   dev::digital_input<input_pin>::termination input_termination;
 };
 
-void run_spec(spec::event_list<dev::uart0, test_params>& spec, const test_params& params) {
+auto run_spec(spec::event_list<dev::uart0, test_params>& spec, const test_params& params) {
   auto input = dev::digital_input<input_pin>{params.input_termination};
 
   {

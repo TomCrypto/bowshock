@@ -40,6 +40,14 @@ software 'test', depends: ['hal'] do
   end
 end
 
+software 'mmio-test', depends: ['hal'] do
+  source language: :cpp, headers: ['src', 'spec/support', *headers] do
+    import 'spec/lpc1100/mmio/board.cpp'
+
+    inject &cppflags
+  end
+end
+
 hardware 'control', targets: :lpc1100 do
   source language: :cpp, headers: ['src', *headers] do
     import 'src/app/control/lpc1100.cpp'
@@ -110,5 +118,13 @@ firmware 'test', imports: ['test'] do
     elf 'bin/test-firmware.elf'
     bin 'bin/test-firmware.bin'
     map 'bin/test-firmware.map'
+  end
+end
+
+firmware 'mmio-test', imports: ['mmio-test'] do
+  target :lpc1100 do
+    elf 'bin/lpc1100-mmio-firmware.elf'
+    bin 'bin/lpc1100-mmio-firmware.bin'
+    map 'bin/lpc1100-mmio-firmware.map'
   end
 end

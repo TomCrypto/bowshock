@@ -12,6 +12,17 @@ extern "C" void *memcpy(void* a, const void* b, std::size_t n)
     return a;
 }
 
+extern "C" void *memset(void* a, int c, std::size_t n)
+{
+    uint8_t* ptrA = (uint8_t*)a;
+
+    while (n--) {
+        *(ptrA++) = static_cast<uint8_t>(c);
+    }
+
+    return a;
+}
+
 extern "C" int memcmp(const void* a, const void* b, std::size_t n)
 {
     const uint8_t* ptrA = (const uint8_t*)a;
@@ -33,9 +44,13 @@ extern "C" int memcmp(const void* a, const void* b, std::size_t n)
 
 extern "C" void __aeabi_memcpy (void *dest, const void *src, size_t n)
 {
-memcpy (dest, src, n);
+  memcpy(dest, src, n);
 }
 
+extern "C" void __aeabi_memset (void *dest, int c, size_t n)
+{
+  memset(dest, c, n);
+}
 
 extern "C" void atexit() {
   return;
