@@ -21,7 +21,7 @@ public:
   constexpr object(Elements&&... elements) : elements(std::forward<Elements>(elements)...) {}
 
   constexpr std::size_t size() const {
-    return detail::max(2, 1 + 4 * element_sizes(index_sequence()));
+    return detail::max(std::size_t{2}, 1 + 4 * index_sequence().size() + element_sizes(index_sequence()));
   }
 
   char* dump(char* buffer) const {
@@ -79,7 +79,7 @@ public:
   constexpr array(Elements&&... elements) : elements(std::forward<Elements>(elements)...) {}
 
   constexpr std::size_t size() const {
-    return detail::max(2, 1 + element_sizes(index_sequence()));
+    return detail::max(std::size_t{2}, 1 + index_sequence().size() + element_sizes(index_sequence()));
   }
 
   char* dump(char* buffer) const {

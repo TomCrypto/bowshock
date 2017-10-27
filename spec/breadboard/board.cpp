@@ -27,32 +27,42 @@ auto logic_level_to_str(hal::logic_level level) {
   }
 }
 
-auto run_spec(const test_params& params) {
-  auto state_when_driven_low = hal::logic_level{};
-  auto state_when_driven_high = hal::logic_level{};
-  auto state_when_not_driven = hal::logic_level{};
+// we need to introduce a little delay between no longer driving the output pin
+// and checking the state of the input pin, as the microcontroller pulldowns and
+// pullups are quite weak and will take a while to raise or lower the voltage
+// (especially if this is done on a breadboard with high wire capacitance)
 
+auto wait() {
+  for (volatile auto dummy = 0; dummy < 100; ++dummy);
+}
+
+auto drive_low_and_check(dev::digital_input<input_pin>& input) {
+  auto output = dev::digital_output<output_pin>{hal::logic_level::low};
+  return wait(), input.state();
+}
+
+auto drive_high_and_check(dev::digital_input<input_pin>& input) {
+  auto output = dev::digital_output<output_pin>{hal::logic_level::high};
+  return wait(), input.state();
+}
+
+auto dont_drive_and_check(dev::digital_input<input_pin>& input) {
+  return wait(), input.state();
+}
+
+auto run_spec(const test_params& params) {
   auto input = dev::digital_input<input_pin>{params.input_termination};
 
-  {
-    auto output = dev::digital_output<output_pin>{hal::logic_level::low};
-    state_when_driven_low = input.state();
-  }
-
-  {
-    auto output = dev::digital_output<output_pin>{hal::logic_level::high};
-    state_when_driven_high = input.state();
-  }
-
-  {
-    auto not_driven = dev::digital_input<output_pin>{dev::digital_input<output_pin>::termination::none};
-    state_when_not_driven = input.state();
-  }
+  auto state_when_driven_low = drive_low_and_check(input);
+  auto state_when_not_driven = dont_drive_and_check(input);
+  auto state_when_driven_high = drive_high_and_check(input);
+  auto state_when_not_driven_again = dont_drive_and_check(input);
 
   return json::object{
     std::pair{"state_when_driven_low", json::string{logic_level_to_str(state_when_driven_low)}},
-    std::pair{"state_when_driven_high", json::string{logic_level_to_str(state_when_driven_high)}},
     std::pair{"state_when_not_driven", json::string{logic_level_to_str(state_when_not_driven)}},
+    std::pair{"state_when_driven_high", json::string{logic_level_to_str(state_when_driven_high)}},
+    std::pair{"state_when_not_driven_again", json::string{logic_level_to_str(state_when_not_driven_again)}},
   };
 }
 

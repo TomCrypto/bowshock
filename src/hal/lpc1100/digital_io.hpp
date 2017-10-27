@@ -87,6 +87,7 @@ public:
   }
 
   ~basic_digital_output() {
+    DIR().template clear<port_mask>();
     release_gpio();
   }
 

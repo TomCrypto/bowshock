@@ -28,6 +28,7 @@ public:
 
 private:
   template <typename T2> auto write_json(const T2& json) {
+    rtl::assert(json.size() < buffer_size, TRACE("insufficient space to buffer JSON response"));
     char buffer[buffer_size];
     json.dump(buffer);
     write_str(buffer);
