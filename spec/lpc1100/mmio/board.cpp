@@ -5,7 +5,7 @@
 #include <rtl/assert.hpp>
 
 #include "simple_json.hpp"
-#include "json_driver.hpp"
+#include "drivers/json.hpp"
 
 namespace dev = hal::lpc1100;
 namespace json = spec::json;

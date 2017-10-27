@@ -2,38 +2,32 @@
 #   device => program upload link to device
 #   main => serial link to device UART0
 
-class Breadboard < JSONDriver
+class Breadboard
   def initialize(options, links)
     @options = options
     @links = links
   end
 
   def upload(program)
-    device.upload program
+    @links[:device].upload program
+  end
+
+  def response
+    @response ||= Drivers::JSON.new(@links[:main], payload).run
   end
 
   private
 
-  def device
-    @links[:device]
-  end
-
-  def link
-    @links[:main]
+  def payload
+    Class.new BinaryStruct do
+      layout :termination, :uint
+    end.new(params).bytes
   end
 
   def params
     @params ||= {
       termination: TERMINATIONS.fetch(@options.fetch(:termination))
     }
-  end
-
-  def payload
-    Parameters.new(params).bytes
-  end
-
-  class Parameters < BinaryStruct
-    layout :termination, :uint
   end
 
   TERMINATIONS = {
