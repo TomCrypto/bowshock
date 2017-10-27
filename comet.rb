@@ -14,8 +14,9 @@ cppflags = proc do
 end
 
 headers = [
+  '/usr/arm-none-eabi/include/c++/7.2.0/arm-none-eabi/armv6-m',
   '/usr/arm-none-eabi/include/c++/7.2.0',
-  '/usr/arm-none-eabi/include/c++/7.2.0/arm-none-eabi/armv6-m'
+  '/usr/arm-none-eabi/include'
 ]
 
 software 'test', depends: ['hal'] do

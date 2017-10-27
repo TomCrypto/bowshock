@@ -6,7 +6,7 @@
 #include <hal/lpc1114/headers/core_cmFunc.h>
 #include <hal/lpc1114/headers/core_cm0.h>
 
-[[noreturn]] void abort() {
+void abort() {
   NVIC_SystemReset();
   while (1);
 }

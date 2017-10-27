@@ -63,6 +63,6 @@ extern "C" void __aeabi_memset (void *dest, int c, size_t n)
   memset(dest, c, n);
 }
 
-extern "C" void atexit() {
-  return;
+extern "C" int atexit(void (*)(void)) {
+  return 0; // probably should implement that...
 }

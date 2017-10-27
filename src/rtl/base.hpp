@@ -17,11 +17,9 @@
 #include <limits>
 #include <new>
 #include <ratio>
-#define _GLIBCXX_ARRAY // horrible, horrible hack because <tuple> is stupid
 #include <tuple>
 /// @endcond
 
-extern "C" [[noreturn]] void abort();
 extern "C" void* memcpy(void* destination, const void* source, std::size_t num);
 extern "C" int memcmp(const void* a, const void* b, std::size_t num);
 extern "C" size_t strlen(const char* str);

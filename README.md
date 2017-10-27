@@ -4,7 +4,14 @@ Currently a work in progress with the LPC1100 series microcontrollers (such as t
 
 Documented with Doxygen (WIP).
 
+Requirements
+------------
+
 Known to work with `arm-none-eabi-gcc` 7.2.0 and LLVM/Clang 5.0.0.
+
+For Archlinux, this should install all the compiler and linker dependencies:
+
+    # pacman -S arm-none-eabi-gcc arm-none-eabi-newlib clang
 
 Testing
 -------

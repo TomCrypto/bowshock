@@ -10,19 +10,19 @@
 namespace rtl {
 
 template <typename _Scale,
-          typename _L = std::ratio<0>, typename _M = std::ratio<0>, typename _T = std::ratio<0>,
-          typename _I = std::ratio<0>, typename _O = std::ratio<0>, typename _N = std::ratio<0>,
-          typename _J = std::ratio<0>, typename _B = std::ratio<0>>
+          typename L_ = std::ratio<0>, typename M_ = std::ratio<0>, typename T_ = std::ratio<0>,
+          typename I_ = std::ratio<0>, typename O_ = std::ratio<0>, typename N_ = std::ratio<0>,
+          typename J_ = std::ratio<0>, typename B_ = std::ratio<0>>
 struct dimension {
   using Scale = _Scale;
-  using L = _L;
-  using M = _M;
-  using T = _T;
-  using I = _I;
-  using O = _O;
-  using N = _N;
-  using J = _J;
-  using B = _B;
+  using L = L_;
+  using M = M_;
+  using T = T_;
+  using I = I_;
+  using O = O_;
+  using N = N_;
+  using J = J_;
+  using B = B_;
 
   template <typename other> static constexpr auto commensurate() {
     return std::ratio_equal<L, typename other::L>::value
