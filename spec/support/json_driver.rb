@@ -4,11 +4,13 @@ class AssertionError < StandardError
   def initialize(msg, file, line)
     @file = file
     @line = line
+    @msg = msg
     super msg
   end
 
-  attr_reader :file
-  attr_reader :line
+  def to_s
+    "#{@msg} [#{@file}:#{@line}]"
+  end
 end
 
 class JSONDriver
@@ -40,6 +42,6 @@ class JSONDriver
   def parse_assertion
     match = /([^:]+):(\d+): (.*)/.match output
     return nil if match.nil? # was not an assertion
-    AssertionError.new match[3], match[1].to_i, match[2]
+    AssertionError.new match[3], match[1], match[2].to_i
   end
 end
