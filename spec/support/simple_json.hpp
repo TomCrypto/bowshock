@@ -10,15 +10,22 @@ namespace spec::json
 namespace detail
 {
 
+// TODO: move this elsewhere (some algorithm header?)
 template <typename T> constexpr auto max(T x, T y) {
   return (x < y) ? y : x;
 }
 
 }
 
+template <typename T> struct json_type_for { using type = T; };
+
+template <typename T> typename json_type_for<T>::type to_json_type(T element) {
+  return typename json_type_for<T>::type{element};
+}
+
 template <typename... Elements> class object {
 public:
-  constexpr object(Elements&&... elements) : elements(std::forward<Elements>(elements)...) {}
+  constexpr object(Elements... elements) : elements({elements.first, to_json_type(elements.second)}...) {}
 
   constexpr std::size_t size() const {
     return detail::max(std::size_t{2}, 1 + 4 * index_sequence().size() + element_sizes(index_sequence()));
@@ -47,7 +54,8 @@ public:
   }
 
 private:
-  std::tuple<Elements...> elements;
+  std::tuple<std::pair<typename Elements::first_type,
+                       typename json_type_for<typename Elements::second_type>::type>...> elements;
 
   static constexpr auto index_sequence() {
     return std::make_index_sequence<std::tuple_size<decltype(elements)>::value>{};
@@ -76,7 +84,7 @@ private:
 
 template <typename... Elements> class array {
 public:
-  constexpr array(Elements&&... elements) : elements(std::forward<Elements>(elements)...) {}
+  constexpr array(Elements... elements) : elements(to_json_type(elements)...) {}
 
   constexpr std::size_t size() const {
     return detail::max(std::size_t{2}, 1 + index_sequence().size() + element_sizes(index_sequence()));
@@ -101,7 +109,7 @@ public:
   }
 
 private:
-  std::tuple<Elements...> elements;
+  std::tuple<typename json_type_for<Elements>::type...> elements;
 
   static constexpr auto index_sequence() {
     return std::make_index_sequence<std::tuple_size<decltype(elements)>::value>{};
@@ -215,5 +223,15 @@ public:
 private:
   rtl::i64 value;
 };
+
+template <> struct json_type_for<rtl::i8>     { using type = number; };
+template <> struct json_type_for<rtl::u8>     { using type = number; };
+template <> struct json_type_for<rtl::i16>    { using type = number; };
+template <> struct json_type_for<rtl::u16>    { using type = number; };
+template <> struct json_type_for<rtl::i32>    { using type = number; };
+template <> struct json_type_for<rtl::u32>    { using type = number; };
+template <> struct json_type_for<rtl::i64>    { using type = number; };
+template <> struct json_type_for<bool>        { using type = boolean; };
+template <> struct json_type_for<const char*> { using type = string; };
 
 }

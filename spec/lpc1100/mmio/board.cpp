@@ -97,9 +97,9 @@ auto run_spec(const test_params& params) {
   }
 
   return json::object{
-    std::pair{"value", json::number{variable}},
-    std::pair{"read", json::number{read_result}},
-    std::pair{"bit", json::boolean{bit_result}}
+    std::pair{"value", variable},
+    std::pair{"read", read_result},
+    std::pair{"bit", bit_result}
   };
 }
 

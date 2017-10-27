@@ -18,13 +18,14 @@ struct test_params {
   dev::digital_input<input_pin>::termination input_termination;
 };
 
-auto logic_level_to_str(hal::logic_level level) {
-  switch (level) {
-    case hal::logic_level::low:
-      return "low";
-    case hal::logic_level::high:
-      return "high";
-  }
+namespace spec::json
+{
+
+template <> struct json_type_for<hal::logic_level> { using type = string; };
+template <> string to_json_type(hal::logic_level element) {
+  return element == hal::logic_level::high ? "high" : "low";
+}
+
 }
 
 auto drive_low_and_check(dev::digital_input<input_pin>& input) {
@@ -55,10 +56,10 @@ auto run_spec(const test_params& params) {
   auto state_when_not_driven_again = dont_drive_and_check(input);
 
   return json::object{
-    std::pair{"state_when_driven_low", json::string{logic_level_to_str(state_when_driven_low)}},
-    std::pair{"state_when_not_driven", json::string{logic_level_to_str(state_when_not_driven)}},
-    std::pair{"state_when_driven_high", json::string{logic_level_to_str(state_when_driven_high)}},
-    std::pair{"state_when_not_driven_again", json::string{logic_level_to_str(state_when_not_driven_again)}},
+    std::pair{"state_when_driven_low", state_when_driven_low},
+    std::pair{"state_when_not_driven", state_when_not_driven},
+    std::pair{"state_when_driven_high", state_when_driven_high},
+    std::pair{"state_when_not_driven_again", state_when_not_driven_again},
   };
 }
 
