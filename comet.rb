@@ -18,20 +18,6 @@ headers = [
   '/usr/arm-none-eabi/include/c++/7.2.0/arm-none-eabi/armv6-m'
 ]
 
-software 'led-matrix', depends: ['hal'] do
-  source language: :cpp, headers: ['src', *headers] do
-    import 'src/app/led-matrix/**/*.cpp'
-
-    inject &cppflags
-  end
-end
-
-software 'control-firmware', depends: ['control', 'hal'] do
-  source language: :cpp, headers: ['src', *headers] do
-    import 'nothing'
-  end
-end
-
 software 'test', depends: ['hal'] do
   source language: :cpp, headers: ['src', 'spec/support', *headers] do
     import 'spec/breadboard/board.cpp'
@@ -94,22 +80,6 @@ firmware 'bowshock', imports: ['main'] do
     elf 'bin/bowshock.elf'
     bin 'bin/bowshock.bin'
     map 'bin/bowshock.map'
-  end
-end
-
-firmware 'led-matrix', imports: ['led-matrix'] do
-  target :lpc1100 do
-    elf 'bin/led-matrix.elf'
-    bin 'bin/led-matrix.bin'
-    map 'bin/led-matrix.map'
-  end
-end
-
-firmware 'control-firmware', imports: ['control-firmware'] do
-  target :lpc1100 do
-    elf 'bin/control-firmware.elf'
-    bin 'bin/control-firmware.bin'
-    map 'bin/control-firmware.map'
   end
 end
 
