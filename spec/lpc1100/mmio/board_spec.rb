@@ -3,6 +3,8 @@ require_relative 'board'
 describe LPC1100::MMIO, hardware: true do
   subject(:board) { described_class.new params, links }
 
+  let(:response) { board.response }
+
   describe 'rtl::mmio<rtl::u32>' do
     before { board.upload 'bin/lpc1100-mmio-firmware.bin' }
 
@@ -14,10 +16,9 @@ describe LPC1100::MMIO, hardware: true do
       }
     end
 
-    let(:result) { board.events.first }
-
-    # Note the mask and bits parameters below are hardcoded in the firmware as
-    # they are template arguments, changing them in here will have no effect.
+    # Note the mask and bit parameters below are hardcoded in the firmware, as
+    # they are template arguments. Changing them from here will have no effect
+    # and they are only shown here to make the spec easier to interpret.
 
     describe 'clear<MASK>' do
       let(:operation)       { :masked_clear }
@@ -27,7 +28,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b00000010000001001100000011100100 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.value).to eq expected_result
       end
     end
 
@@ -38,7 +39,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b00000000000000000000000000000000 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.value).to eq expected_result
       end
     end
 
@@ -50,7 +51,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b11010111111111011111101111111111 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.value).to eq expected_result
       end
     end
 
@@ -61,7 +62,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b11111111111111111111111111111111 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.value).to eq expected_result
       end
     end
 
@@ -73,7 +74,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b10000111010001011111000111110110 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.value).to eq expected_result
       end
     end
 
@@ -86,7 +87,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:expected_result) { 0b10000110111011011100100011110100 }
 
         it 'returns the correct result' do
-          expect(result.to_i(2)).to eq expected_result
+          expect(response.value).to eq expected_result
         end
       end
 
@@ -97,8 +98,8 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { 0b10000101100101010010101000001001 }
 
         it 'asserts' do
-          expect(result).to include(
-            'attempted to write bits outside mask specification'
+          expect { response }.to raise_error(
+            AssertionError, /attempted to write bits outside mask/
           )
         end
       end
@@ -112,7 +113,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b10000111100101011110101011101101 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.value).to eq expected_result
       end
     end
 
@@ -123,7 +124,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b11010101011010101010100100101101 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.value).to eq expected_result
       end
     end
 
@@ -135,7 +136,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b01010000101110000000101000001001 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.read).to eq expected_result
       end
     end
 
@@ -147,7 +148,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { nil }
 
         it 'returns the correct result' do
-          expect(result.to_b).to be true
+          expect(response.bit).to be true
         end
       end
 
@@ -158,7 +159,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { nil }
 
         it 'returns the correct result' do
-          expect(result.to_b).to be false
+          expect(response.bit).to be false
         end
       end
     end
@@ -171,7 +172,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { nil }
 
         it 'returns the correct result' do
-          expect(result.to_b).to be true
+          expect(response.bit).to be true
         end
       end
 
@@ -182,7 +183,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { nil }
 
         it 'returns the correct result' do
-          expect(result.to_b).to be false
+          expect(response.bit).to be false
         end
       end
 
@@ -193,7 +194,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { nil }
 
         it 'returns the correct result' do
-          expect(result.to_b).to be false
+          expect(response.bit).to be false
         end
       end
     end
@@ -206,7 +207,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { nil }
 
         it 'returns the correct result' do
-          expect(result.to_b).to be false
+          expect(response.bit).to be false
         end
       end
 
@@ -217,7 +218,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { nil }
 
         it 'returns the correct result' do
-          expect(result.to_b).to be true
+          expect(response.bit).to be true
         end
       end
     end
@@ -229,7 +230,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b01010010101101001100101011101101 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.value).to eq expected_result
       end
     end
 
@@ -240,7 +241,7 @@ describe LPC1100::MMIO, hardware: true do
       let(:expected_result) { 0b01010010101111001100101011101101 }
 
       it 'returns the correct result' do
-        expect(result.to_i(2)).to eq expected_result
+        expect(response.value).to eq expected_result
       end
     end
 
@@ -252,7 +253,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:expected_result) { 0b01010010101111001100101011101101 }
 
         it 'returns the correct result' do
-          expect(result.to_i(2)).to eq expected_result
+          expect(response.value).to eq expected_result
         end
       end
 
@@ -263,7 +264,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:expected_result) { 0b01010010101101001100101011101101 }
 
         it 'returns the correct result' do
-          expect(result.to_i(2)).to eq expected_result
+          expect(response.value).to eq expected_result
         end
       end
     end
@@ -275,7 +276,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { nil } #       ^ bit 19 is affected
 
         it 'returns the correct result' do
-          expect(result.to_b).to be false
+          expect(response.bit).to be false
         end
       end
 
@@ -285,7 +286,7 @@ describe LPC1100::MMIO, hardware: true do
         let(:argument)        { nil } #       ^ bit 19 is affected
 
         it 'returns the correct result' do
-          expect(result.to_b).to be true
+          expect(response.bit).to be true
         end
       end
     end

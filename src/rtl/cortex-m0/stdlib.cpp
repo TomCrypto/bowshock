@@ -42,6 +42,17 @@ extern "C" int memcmp(const void* a, const void* b, std::size_t n)
     return 0;
 }
 
+extern "C" size_t strlen(const char* str) {
+  std::size_t size = 0;
+
+  while (*str != '\0') {
+      size++;
+      str++;
+  }
+
+  return size;
+}
+
 extern "C" void __aeabi_memcpy (void *dest, const void *src, size_t n)
 {
   memcpy(dest, src, n);

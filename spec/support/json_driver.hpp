@@ -6,7 +6,7 @@
 namespace spec
 {
 
-template <typename T, typename Params> class event_list : private T
+template <typename T, typename Params, std::size_t buffer_size = 256> class json_driver : private T
 {
 public:
   using T::T;
@@ -15,24 +15,25 @@ public:
     auto params = Params{};
 
     this->read(buffer(static_cast<rtl::u8*>(static_cast<void*>(&params)), sizeof(Params))).wait();
-    handler(params);
+
+    write_json(handler(params));
     terminate_session();
   }
 
   // continuation function for a test that failed due to an assertion error or other hard fault
   auto fail(const char* message) {
-    write_event(message);
-    write_event("\n");
+    write_str(message);
     terminate_session();
   }
 
-  auto event(const char* message) {
-    write_event(message);
-    write_event("\n");
+private:
+  template <typename T2> auto write_json(const T2& json) {
+    char buffer[buffer_size];
+    json.dump(buffer);
+    write_str(buffer);
   }
 
-private:
-  auto write_event(const char* event) {
+  auto write_str(const char* event) {
     this->write(sys::format(std::pair{"", event})).wait();
   }
 

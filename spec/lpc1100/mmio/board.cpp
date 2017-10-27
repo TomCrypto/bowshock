@@ -4,9 +4,11 @@
 #include <hal/lpc1100/uart.hpp>
 #include <rtl/assert.hpp>
 
-#include "protocols/event_list.hpp"
+#include "simple_json.hpp"
+#include "json_driver.hpp"
 
 namespace dev = hal::lpc1100;
+namespace json = spec::json;
 
 enum class operation : rtl::u32 {
   masked_clear    = 0,
@@ -37,19 +39,10 @@ struct test_params {
   rtl::u32 argument;
 };
 
-auto to_binary_string(rtl::u32 value) {
-  static char buffer[35] = "0b";
-
-  for (auto i = 0; i < 32; ++i) {
-    buffer[33 - i] = (value & 0b1) ? '1' : '0';
-    value >>= 1;
-  }
-
-  return static_cast<const char*>(buffer);
-}
-
-auto run_spec(spec::event_list<dev::uart0, test_params>& spec, const test_params& params) {
+auto run_spec(const test_params& params) {
   auto variable = rtl::u32{params.initial_value};
+  auto read_result = rtl::u32{};
+  auto bit_result = bool{false};
   auto mmio = rtl::mmio<rtl::u32>{reinterpret_cast<rtl::uptr>(&variable)};
 
   switch (params.operation) {
@@ -78,17 +71,17 @@ auto run_spec(spec::event_list<dev::uart0, test_params>& spec, const test_params
       mmio.write(params.argument);
       break;
     case operation::read:
-      variable = mmio.read<MASK>();
+      read_result = mmio.read<MASK>();
       break;
     case operation::any:
-      spec.event(mmio.any<MASK>() ? "true" : "false");
-      return;
+      bit_result = mmio.any<MASK>();
+      break;
     case operation::all:
-      spec.event(mmio.all<MASK>() ? "true" : "false");
-      return;
+      bit_result = mmio.all<MASK>();
+      break;
     case operation::none:
-      spec.event(mmio.none<MASK>() ? "true" : "false");
-      return;
+      bit_result = mmio.none<MASK>();
+      break;
     case operation::clear_bit:
       mmio.clear_bit<BIT>();
       break;
@@ -99,15 +92,19 @@ auto run_spec(spec::event_list<dev::uart0, test_params>& spec, const test_params
       mmio.toggle_bit<BIT>();
       break;
     case operation::read_bit:
-      spec.event(mmio.read_bit<BIT>() ? "true" : "false");
-      return;
+      bit_result = mmio.read_bit<BIT>();
+      break;
   }
 
-  spec.event(to_binary_string(variable));
+  return json::object{
+    std::pair{"value", json::number{variable}},
+    std::pair{"read", json::number{read_result}},
+    std::pair{"bit", json::boolean{bit_result}}
+  };
 }
 
 [[noreturn]] void main(const dev::reset_context& context) {
-  auto spec = spec::event_list<dev::uart0, test_params>{9600_Hz};
+  auto spec = spec::json_driver<dev::uart0, test_params>{9600_Hz};
 
   if (context.event == dev::reset_event::assert) {
     spec.fail(context.assert.message);
@@ -115,7 +112,7 @@ auto run_spec(spec::event_list<dev::uart0, test_params>& spec, const test_params
 
   while (true) {
     spec.run([&](auto&&... args) {
-      run_spec(spec, std::forward<decltype(args)>(args)...);
+      return run_spec(std::forward<decltype(args)>(args)...);
     });
   }
 }

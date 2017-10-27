@@ -3,7 +3,7 @@
 #   main => serial link to device UART0
 
 module LPC1100
-  class MMIO
+  class MMIO < JSONDriver
     def initialize(options, links)
       @options = options
       @links = links
@@ -13,15 +13,7 @@ module LPC1100
       device.upload program
     end
 
-    def events
-      results
-    end
-
     private
-
-    def protocol
-      @protocol ||= Protocols::EventList.new
-    end
 
     def device
       @links[:device]
@@ -29,16 +21,6 @@ module LPC1100
 
     def link
       @links[:main]
-    end
-
-    def results
-      decoder = protocol.decode
-      link.write protocol.encode payload
-
-      loop do
-        result = decoder.resume link.read(1).first
-        break result unless decoder.alive? # done
-      end
     end
 
     def params
