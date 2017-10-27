@@ -4,6 +4,8 @@ Currently a work in progress with the LPC1100 series microcontrollers (such as t
 
 Documented with Doxygen (WIP).
 
+Known to work with `arm-none-eabi-gcc` 7.2.0 and LLVM/Clang 5.0.0.
+
 Testing
 -------
 
