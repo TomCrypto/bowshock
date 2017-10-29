@@ -23,15 +23,15 @@ private:
   tx_pin_t tx_pin{tx_pin_t::uart_tx_options::none};
   rx_pin_t rx_pin{rx_pin_t::uart_rx_options::none};
 
-  static auto LSR() { return rtl::mmio_ro<rtl::u32>{0x40008014}; }
-  static auto IER() { return rtl::mmio_rw<rtl::u32>{0x40008004}; }
-  static auto FCR() { return rtl::mmio_wo<rtl::u32>{0x40008008}; }
-  static auto RBR() { return rtl::mmio_ro<rtl::u8>{0x40008000}; }
-  static auto THR() { return rtl::mmio_wo<rtl::u8>{0x40008000}; }
-  static auto DLL() { return rtl::mmio_wo<rtl::u8>{0x40008000}; }
-  static auto DLM() { return rtl::mmio_wo<rtl::u8>{0x40008004}; }
-  static auto LCR() { return rtl::mmio_rw<rtl::u8>{0x4000800C}; }
-  static auto FDR() { return rtl::mmio_rw<rtl::u8>{0x40008028}; }
+  using LSR = rtl::mmio_ro<0x40008014, rtl::u32>;
+  using IER = rtl::mmio_rw<0x40008004, rtl::u32>;
+  using FCR = rtl::mmio_wo<0x40008008, rtl::u32>;
+  using RBR = rtl::mmio_ro<0x40008000, rtl::u8>;
+  using THR = rtl::mmio_wo<0x40008000, rtl::u8>;
+  using DLL = rtl::mmio_rw<0x40008000, rtl::u8>;
+  using DLM = rtl::mmio_wo<0x40008004, rtl::u8>;
+  using LCR = rtl::mmio_rw<0x4000800C, rtl::u8>;
+  using FDR = rtl::mmio_rw<0x40008028, rtl::u8>;
 
 public:
   template <typename T> uart(rtl::quantity<T, rtl::hertz> baud_rate) {
@@ -66,21 +66,21 @@ private:
     auto clock_hertz = clock<clock_source::uart>::frequency<rtl::u32>().in<rtl::hertz>();
     auto divisor = (clock_hertz / 16 / baud_rate).template as<rtl::dimensionless>();
 
-    LCR().write(0b10000000); // enable latches
+    LCR::write(0b10000000); // enable latches
 
-    DLM().write(divisor / 256);
-    DLL().write(divisor % 256);
+    DLM::write(divisor / 256);
+    DLL::write(divisor % 256);
 
-    FDR().write(0b00010000); // mul = 1, divadd = 0 (no fractional divider)
-    LCR().write(0b00000011); // 8 bit words, 1 stop bit, no parity, disable latches
+    FDR::write(0b00010000); // mul = 1, divadd = 0 (no fractional divider)
+    LCR::write(0b00000011); // 8 bit words, 1 stop bit, no parity, disable latches
 
-    FCR().template set<0b11000111>(); // 2 MSBs are the RX FIFO trigger level (here set to 0b11 = 14 characters)
+    FCR::set<0b11000111>(); // 2 MSBs are the RX FIFO trigger level (here set to 0b11 = 14 characters)
   }
 
   template <typename T> struct send_waitable : private rtl::noncopyable {
   private:
     auto flush_tx_queue() {
-      FCR().template set<0b100>();
+      FCR::set<0b100>();
     }
   
     auto fill_tx_queue() {
@@ -90,7 +90,7 @@ private:
         auto result = context(data);
 
         if (result == rtl::waitable::status::pending) {
-          THR().write(data);
+          THR::write(data);
         } else {
           return std::pair{i != 0, result};
         }
@@ -110,19 +110,19 @@ private:
 
       switch (status) {
         case rtl::waitable::status::pending:
-          LSR().read();
-          IER().template set<0b10>();
+          LSR::read();
+          IER::set<0b10>();
           break;
         case rtl::waitable::status::complete:
           if (result.first) {
             completing = true;
             status = rtl::waitable::status::pending;
-            LSR().read();
-            IER().template set<0b10>();
+            LSR::read();
+            IER::set<0b10>();
           }
           break;
         case rtl::waitable::status::failed:
-          IER().template clear<0b10>();
+          IER::clear<0b10>();
       }
     }
 
@@ -132,7 +132,7 @@ private:
     // TODO: if we define move semantics, need possible interrupt disable/enable for safely moving the lambda
 
     ~send_waitable() {
-      IER().template clear<0b10>();
+      IER::clear<0b10>();
       send_context.reset();
     }
 
@@ -151,7 +151,7 @@ private:
     auto interrupt() {
       if (completing) {
         status = rtl::waitable::status::complete;
-        IER().template clear<0b10>();
+        IER::clear<0b10>();
         return;
       }
 
@@ -162,11 +162,11 @@ private:
           if (result.first) {
             completing = true;
           } else {
-            IER().template clear<0b10>();
+            IER::clear<0b10>();
             status = result.second;
           }
         } else {
-          IER().template clear<0b10>();
+          IER::clear<0b10>();
           status = result.second;
         }
       }
@@ -185,7 +185,7 @@ private:
   template <typename T> struct recv_waitable : private rtl::noncopyable {
   private:
     auto flush_rx_queue() {
-      FCR().template set<0b010>();
+      FCR::set<0b010>();
     }
 
   public:
@@ -193,8 +193,8 @@ private:
       recv_context = {decltype(recv_context)::template member_function<recv_waitable<T>>, this};
 
       flush_rx_queue();
-      LSR().read();
-      IER().template set<0b101>();
+      LSR::read();
+      IER::set<0b101>();
     }
 
     recv_waitable(recv_waitable<T>&& other) = delete;
@@ -221,15 +221,15 @@ private:
     auto interrupt(rtl::u32 iir) {
       switch (iir) {
         case 0b0110: /* RLS */
-          if (LSR().template any<0b10001110>()) {
+          if (LSR::any<0b10001110>()) {
             status = rtl::waitable::status::failed;
           }
 
           break;
         case 0b0100: /* RDA */
         case 0b1100: /* CTI */
-          while (LSR().template all<0b1>()) {
-            auto result = context(RBR().read());
+          while (LSR::all<0b1>()) {
+            auto result = context(RBR::read());
 
             if (result != rtl::waitable::status::pending) {
               status = result;
@@ -252,7 +252,7 @@ private:
 using uart0 = uart<pin::TXD, pin::RXD>;
 
 inline void interrupt::handlers::uart(void) {
-  auto iir = rtl::mmio_ro<rtl::u32>{0x40008008}.template read<0b1110>();
+  auto iir = rtl::mmio_ro<0x40008008, rtl::u32>::read<0b1110>();
 
   switch (iir) {
     case 0b0010:

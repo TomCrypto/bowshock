@@ -39,60 +39,63 @@ struct test_params {
   rtl::u32 argument;
 };
 
+constexpr auto TEST_ADDRESS = 0x10000FFC; // highest word in RAM
+using TEST_REGISTER = rtl::mmio<TEST_ADDRESS, rtl::u32>;
+
 auto run_spec(const test_params& params) {
-  auto variable = rtl::u32{params.initial_value};
+  auto& variable = *reinterpret_cast<rtl::u32*>(TEST_ADDRESS);
+  variable = params.initial_value;
   auto read_result = rtl::u32{};
   auto bit_result = bool{false};
-  auto mmio = rtl::mmio<rtl::u32>{reinterpret_cast<rtl::uptr>(&variable)};
 
   switch (params.operation) {
     case operation::masked_clear:
-      mmio.clear<MASK>();
+      TEST_REGISTER::clear<MASK>();
       break;
     case operation::clear:
-      mmio.clear();
+      TEST_REGISTER::clear();
       break;
     case operation::masked_set:
-      mmio.set<MASK>();
+      TEST_REGISTER::set<MASK>();
       break;
     case operation::set:
-      mmio.set();
+      TEST_REGISTER::set();
       break;
     case operation::toggle:
-      mmio.toggle<MASK>();
+      TEST_REGISTER::toggle<MASK>();
       break;
     case operation::masked_write:
-      mmio.write<MASK>(params.argument);
+      TEST_REGISTER::write<MASK>(params.argument);
       break;
     case operation::safe_write:
-      mmio.safe_write<MASK>(params.argument);
+      TEST_REGISTER::safe_write<MASK>(params.argument);
       break;
     case operation::write:
-      mmio.write(params.argument);
+      TEST_REGISTER::write(params.argument);
       break;
     case operation::read:
-      read_result = mmio.read<MASK>();
+      read_result = TEST_REGISTER::read<MASK>();
       break;
     case operation::any:
-      bit_result = mmio.any<MASK>();
+      bit_result = TEST_REGISTER::any<MASK>();
       break;
     case operation::all:
-      bit_result = mmio.all<MASK>();
+      bit_result = TEST_REGISTER::all<MASK>();
       break;
     case operation::none:
-      bit_result = mmio.none<MASK>();
+      bit_result = TEST_REGISTER::none<MASK>();
       break;
     case operation::clear_bit:
-      mmio.clear_bit<BIT>();
+      TEST_REGISTER::clear_bit<BIT>();
       break;
     case operation::set_bit:
-      mmio.set_bit<BIT>();
+      TEST_REGISTER::set_bit<BIT>();
       break;
     case operation::toggle_bit:
-      mmio.toggle_bit<BIT>();
+      TEST_REGISTER::toggle_bit<BIT>();
       break;
     case operation::read_bit:
-      bit_result = mmio.read_bit<BIT>();
+      bit_result = TEST_REGISTER::read_bit<BIT>();
       break;
   }
 

@@ -21,7 +21,7 @@ namespace hal::lpc1100 {
 
 namespace digital_io_detail {
 
-inline auto SYSAHBCLKCTRL() { return rtl::mmio<rtl::u32>{0x40048080}; }
+// inline auto SYSAHBCLKCTRL() { return rtl::mmio<rtl::u32>{0x40048080}; }
 
 // move this general resource management stuff to a separate class
 // which can monitor exactly which resources are used and turn the clocks on and off accordingly?
@@ -55,7 +55,7 @@ public:
   basic_digital_input(termination termination, options options = options::none)
     : hal::lpc1100::physical_io<pin>(termination, options) {
     acquire_gpio();
-    DIR().template clear<port_mask>();
+    DIR::template clear<port_mask>();
   }
 
   ~basic_digital_input() {
@@ -63,14 +63,14 @@ public:
   }
 
   auto state() {
-    return DATA().read() ? hal::logic_level::high : hal::logic_level::low;
+    return DATA::read() ? hal::logic_level::high : hal::logic_level::low;
   }
 
 private:
   static constexpr auto port_mask = 1 << port_no;
 
-  static auto DATA() { return rtl::mmio<rtl::u32>{gpio_ptr + 4 * port_mask}; }
-  static auto DIR() { return rtl::mmio<rtl::u32>{gpio_ptr + 0x8000}; }
+  using DATA = rtl::mmio<gpio_ptr + 4 * port_mask, rtl::u32>;
+  using DIR = rtl::mmio<gpio_ptr + 0x8000, rtl::u32>;
 };
 
 template <pin pin, rtl::uptr gpio_ptr, std::size_t port_no>
@@ -82,28 +82,28 @@ public:
   basic_digital_output(hal::logic_level initial_level, options options = options::none)
     : hal::lpc1100::physical_io<pin>(options) {
     acquire_gpio();
-    DIR().template set<port_mask>();
+    DIR::template set<port_mask>();
     this->drive(initial_level);
   }
 
   ~basic_digital_output() {
-    DIR().template clear<port_mask>();
+    DIR::template clear<port_mask>();
     release_gpio();
   }
 
   auto drive_low() {
-    DATA().clear();
+    DATA::clear();
   }
 
   auto drive_high() {
-    DATA().set();
+    DATA::set();
   }
 
 private:
   static constexpr auto port_mask = 1 << port_no;
 
-  static auto DATA() { return rtl::mmio<rtl::u32>{gpio_ptr + 4 * port_mask}; }
-  static auto DIR() { return rtl::mmio<rtl::u32>{gpio_ptr + 0x8000}; }
+  using DATA = rtl::mmio<gpio_ptr + 4 * port_mask, rtl::u32>;
+  using DIR = rtl::mmio<gpio_ptr + 0x8000, rtl::u32>;
 };
 
 }

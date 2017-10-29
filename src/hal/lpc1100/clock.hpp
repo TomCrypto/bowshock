@@ -30,28 +30,30 @@ template <clock_source source> class clock;
 /// @brief The internal IRC oscillator clock.
 template <> class clock<clock_source::irc> {
 private:
-  static auto PDRUNCFG() { return rtl::mmio<rtl::u32>{0x40048238}; }
+  using PDRUNCFG = rtl::mmio<0x40048238, rtl::u32>;
 
 public:
   template <typename T> static auto frequency() { return rtl::quantity<T, rtl::megahertz>{12}; }
 
   static auto disable() {
-    PDRUNCFG().set<0b11>();
+    PDRUNCFG::set<0b11>();
   }
 
   static auto enable() {
-    PDRUNCFG().clear<0b11>();
+    PDRUNCFG::clear<0b11>();
   }
 };
 
 // TODO: implement system clock, and that will be enough for now
 
 template <> class clock<clock_source::pll_in> {
+private:
+  using SYSPLLCLKSEL = rtl::mmio<0x40048040, rtl::u32>;
+  using SYSPLLCLKUEN = rtl::mmio<0x40048044, rtl::u32>;
+
 public:
   template <typename T> static auto frequency() {
-    auto SYSPLLCLKSEL = rtl::mmio<rtl::u32>{0x40048040};
-
-    switch (SYSPLLCLKSEL.read<0b1>()) {
+    switch (SYSPLLCLKSEL::read<0b1>()) {
       case 0b0:
         return clock<clock_source::irc>::frequency<T>();
       case 0b1:
@@ -62,31 +64,31 @@ public:
   }
 
   static auto set_source(clock_source source) {
-    auto SYSPLLCLKSEL = rtl::mmio<rtl::u32>{0x40048040};
-    auto SYSPLLCLKUEN = rtl::mmio<rtl::u32>{0x40048044};
-
     switch (source) {
       case clock_source::irc:
-        SYSPLLCLKSEL.write<0b1>(0b0);
+        SYSPLLCLKSEL::write<0b1>(0b0);
         break;
       case clock_source::system:
-        SYSPLLCLKSEL.write<0b1>(0b1);
+        SYSPLLCLKSEL::write<0b1>(0b1);
         break;
       default:
         rtl::assert(false, TRACE("invalid clock source provided"));
     }
 
-    SYSPLLCLKUEN.write<0b1>(0b0);
-    SYSPLLCLKUEN.write<0b1>(0b1);
+    SYSPLLCLKUEN::write<0b1>(0b0);
+    SYSPLLCLKUEN::write<0b1>(0b1);
   }
 };
 
 template <> class clock<clock_source::pll_out> {
+private:
+  using SYSPLLCTRL = rtl::mmio<0x40048008, rtl::u32>;
+  using SYSPLLSTAT = rtl::mmio<0x4004800C, rtl::u32>;
+  using PDRUNCFG = rtl::mmio<0x40048238, rtl::u32>;
+
 public:
   template <typename T> static auto frequency() {
-    auto SYSPLLCTRL = rtl::mmio<rtl::u32>{0x40048008};
-
-    auto m = SYSPLLCTRL.read<0b11111>() + 1;
+    auto m = SYSPLLCTRL::read<0b11111>() + 1;
 
     return m * clock<clock_source::pll_in>::frequency<T>();
   }
@@ -107,19 +109,14 @@ public:
       p++;                                // find P which gives FCCO in the allowed range (over 156MHz)
     }
 
-    auto SYSPLLCTRL = rtl::mmio<rtl::u32>{0x40048008};
-    auto SYSPLLSTAT = rtl::mmio<rtl::u32>{0x4004800C};
-    auto PDRUNCFG = rtl::mmio<rtl::u32>{0x40048238};
+    SYSPLLCTRL::write<0b111111>((m.template as<rtl::dimensionless>() - 1) | p << 5);
+    PDRUNCFG::clear<0b10000000>(); // power-up PLL
 
-    SYSPLLCTRL.write<0b111111>((m.template as<rtl::dimensionless>() - 1) | p << 5);
-    PDRUNCFG.clear<0b10000000>(); // power-up PLL
-
-    while (SYSPLLSTAT.none<0b1>());    // wait for PLL lock
+    while (SYSPLLSTAT::none<0b1>());    // wait for PLL lock
   }
 
   static auto disable() {
-    auto PDRUNCFG = rtl::mmio<rtl::u32>{0x40048238};
-    PDRUNCFG.set<0b10000000>(); // power-down PLL
+    PDRUNCFG::set<0b10000000>(); // power-down PLL
   }
 };
 
@@ -127,11 +124,13 @@ public:
 ///
 /// @remarks This clock cannot be powered down while the system is running.
 template <> class clock<clock_source::main> {
+private:
+  using MAINCLKSEL = rtl::mmio<0x40048070, rtl::u32>;
+  using MAINCLKUEN = rtl::mmio<0x40048074, rtl::u32>;
+
 public:
   template <typename T> static auto frequency() {
-    auto MAINCLKSEL = rtl::mmio<rtl::u32>{0x40048070};
-
-    switch (MAINCLKSEL.read<0b11>()) {
+    switch (MAINCLKSEL::read<0b11>()) {
       case 0b00:
         return clock<clock_source::irc>::frequency<T>();
       case 0b01:
@@ -146,55 +145,52 @@ public:
   }
 
   static auto set_source(clock_source source) {
-    auto MAINCLKSEL = rtl::mmio<rtl::u32>{0x40048070};
-    auto MAINCLKUEN = rtl::mmio<rtl::u32>{0x40048074};
-
     switch (source) {
       case clock_source::irc:
-        MAINCLKSEL.write<0b11>(0b00);
+        MAINCLKSEL::write<0b11>(0b00);
         break;
       case clock_source::pll_in:
-        MAINCLKSEL.write<0b11>(0b01);
+        MAINCLKSEL::write<0b11>(0b01);
         break;
       case clock_source::pll_out:
-        MAINCLKSEL.write<0b11>(0b11);
+        MAINCLKSEL::write<0b11>(0b11);
         break;
       case clock_source::watchdog_osc:
-        MAINCLKSEL.write<0b11>(0b10);
+        MAINCLKSEL::write<0b11>(0b10);
         break;
       default:
         rtl::assert(false, TRACE("invalid clock source provided"));
     }
 
-    MAINCLKUEN.write<0b1>(0b0);
-    MAINCLKUEN.write<0b1>(0b1);
+    MAINCLKUEN::write<0b1>(0b0);
+    MAINCLKUEN::write<0b1>(0b1);
   }
 };
 
 /// @brief The UART peripheral clock.
 template <> class clock<clock_source::uart> {
 private:
-  static auto SYSAHBCLKCTRL() { return rtl::mmio<rtl::u32>{0x40048080}; }
-  static auto UARTCLKDIV() { return rtl::mmio<rtl::u32>{0x40048098}; }
+  using SYSAHBCLKCTRL= rtl::mmio<0x40048080, rtl::u32>;
+  using UARTCLKDIV = rtl::mmio<0x40048098, rtl::u32>;
 
 public:
   template <typename T> static auto frequency() {
-    auto divider = UARTCLKDIV().read<0b11111111>();
+    auto divider = UARTCLKDIV::read<0b11111111>();
     return clock<clock_source::main>::frequency<T>() / divider;
   }
 
   static auto set_divider(rtl::u8 divider) {
     rtl::assert(divider != 0, TRACE("UART clock enabled with zero divider"));
-    UARTCLKDIV().write<0b11111111>(divider);
+    UARTCLKDIV::write<0b11111111>(divider);
   }
 
   static auto enable(rtl::u8 divider = 1) {
     set_divider(divider);
-    SYSAHBCLKCTRL().set_bit<12>();
+    SYSAHBCLKCTRL::set_bit<12>();
   }
 
   static auto disable() {
-    SYSAHBCLKCTRL().clear_bit<12>();
+    SYSAHBCLKCTRL::clear_bit<12>();
   }
 };
 

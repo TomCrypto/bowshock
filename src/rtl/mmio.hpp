@@ -12,6 +12,126 @@
 
 namespace rtl {
 
+namespace detail {
+
+template <typename T> static constexpr auto all_bits = std::numeric_limits<T>::max();
+
+template <rtl::uptr address, typename T> struct io {
+public:
+  static constexpr auto all_bits_set = std::numeric_limits<T>::max();
+
+  static_assert(std::is_unsigned<T>::value && std::is_integral<T>::value,
+                "MMIO register type must be an unsigned integral type");
+
+  static auto& memory() {
+    return *reinterpret_cast<volatile T*>(address);
+  }
+};
+
+}
+
+template <rtl::uptr address, typename T> struct mmio_wo {
+public:
+  /// @brief Clears all bits in the mask from the register. This is equivalent to \c write<mask>(all bits zero).
+  ///
+  /// @remarks If your mask is all-ones, use the non-templated \c clear() function instead to avoid a readback.
+  template <T mask> static auto clear() {
+    detail::io<address, T>::memory() &= ~mask;
+  }
+
+  /// @brief Sets all bits of the register to zero.
+  static auto clear() {
+    detail::io<address, T>::memory() = 0;
+  }
+
+  /// @brief Writes all bits in the mask to the register. This is equivalent to \c write<mask>(all mask bits one).
+  ///
+  /// @remarks If your mask is all-ones, use the non-templated \c set() function instead to avoid a readback.
+  template <T mask> static auto set() {
+    detail::io<address, T>::memory() |= mask;
+  }
+
+  /// @brief Sets all bits of the register to one.
+  static auto set() {
+    set<detail::io<address, T>::all_bits_set>();
+  }
+
+  /// @brief Toggles the register's bits.
+  template <T mask = detail::io<address, T>::all_bits_set> static auto toggle() {
+    detail::io<address, T>::memory() ^= mask;
+  }
+
+  /// @brief Writes the specified bits to the register.
+  ///
+  /// @warning If the mask does not fully cover the bits being written, the behaviour is undefined (and an assert will
+  ///          be thrown if enabled). To allow such operations, use the \c safe_write() function instead.
+  template <T mask> static auto write(T bits) {
+    rtl::assert(!(bits & ~mask), TRACE("attempted to write bits outside mask specification to mmio register"));
+
+    detail::io<address, T>::memory() = bits | (detail::io<address, T>::memory() & ~mask);
+  }
+
+  /// @brief Writes the specified bits to the register.
+  ///
+  /// @remarks This function will mask the bits of the argument with the mask prior to writing them. If you know that
+  ///          the argument is fully covered by the mask already, call \c write() directly to avoid this overhead.
+  template <T mask> static auto safe_write(T bits) {
+    detail::io<address, T>::memory() = (bits & mask) | (detail::io<address, T>::memory() & ~mask);
+  }
+
+  /// @brief Overwrites the entire register with the specified bits.
+  static auto write(T bits) {
+    detail::io<address, T>::memory() = bits;
+  }
+
+  /// @brief Clears the given bit in the register.
+  template <std::size_t bit> static auto clear_bit() {
+    static_assert(bit < sizeof(T) * 8, "bit out of range");
+    clear<1 << bit>();
+  }
+
+  /// @brief Sets the given bit in the register.
+  template <std::size_t bit> static auto set_bit() {
+    static_assert(bit < sizeof(T) * 8, "bit out of range");
+    set<1 << bit>();
+  }
+
+  /// @brief Toggles the given bit in the register.
+  template <std::size_t bit> static auto toggle_bit() {
+    static_assert(bit < sizeof(T) * 8, "bit out of range");
+    toggle<1 << bit>();
+  }
+};
+
+template <rtl::uptr address, typename T> struct mmio_ro {
+public:
+  /// @brief Reads out the register's bits.
+  template <T mask = detail::io<address, T>::all_bits_set> static auto read() {
+    return detail::io<address, T>::memory() & mask;
+  }
+
+  /// @brief Returns whether any of the bits in the mask are set.
+  template <T mask = detail::io<address, T>::all_bits_set> static auto any() {
+    return (detail::io<address, T>::memory() & mask) != 0;
+  }
+
+  /// @brief Returns whether all of the bits in the mask are set.
+  template <T mask = detail::io<address, T>::all_bits_set> static auto all() {
+    return (detail::io<address, T>::memory() & mask) == mask;
+  }
+
+  /// @brief Returns whether none of the bits in the mask are set.
+  template <T mask = detail::io<address, T>::all_bits_set> static auto none() {
+    return (detail::io<address, T>::memory() & mask) == 0;
+  }
+
+  /// @brief Reads the given bit in the register.
+  template <std::size_t bit> static auto read_bit() {
+    static_assert(bit < sizeof(T) * 8, "bit out of range");
+    return all<1 << bit>();
+  }
+};
+
 /// @brief A memory-mapped IO register of a given width.
 ///
 /// This class operates on the assumption that the bit patterns read from and written to the wrapped memory address may
@@ -23,146 +143,9 @@ namespace rtl {
 ///          value.
 ///
 /// @remarks It is recommended to use \c 0b notation when writing masks for clarity.
-template <typename T> struct mmio {
-protected:
-  static constexpr auto all_bits = std::numeric_limits<T>::max();
+template <rtl::uptr address, typename T> struct mmio_rw : public mmio_ro<address, T>, mmio_wo<address, T> {};
 
-public:
-  static_assert(std::is_unsigned<T>::value && std::is_integral<T>::value,
-                "MMIO register type must be an unsigned integral type");
-
-  /// @brief Wraps the given memory address as an MMIO register.
-  constexpr explicit mmio(uptr word) : reg((volatile T*)word) {}
-
-  /// @brief Clears all bits in the mask from the register. This is equivalent to \c write<mask>(all bits zero).
-  ///
-  /// @remarks If your mask is all-ones, use the non-templated \c clear() function instead to avoid a readback.
-  template <T mask> auto clear() {
-    *reg &= ~mask;
-  }
-
-  /// @brief Sets all bits of the register to zero.
-  auto clear() {
-    *reg = 0;
-  }
-
-  /// @brief Writes all bits in the mask to the register. This is equivalent to \c write<mask>(all mask bits one).
-  ///
-  /// @remarks If your mask is all-ones, use the non-templated \c set() function instead to avoid a readback.
-  template <T mask> auto set() {
-    *reg |= mask;
-  }
-
-  /// @brief Sets all bits of the register to one.
-  auto set() {
-    *reg = all_bits;
-  }
-
-  /// @brief Toggles the register's bits.
-  template <T mask = all_bits> auto toggle() {
-    *reg ^= mask;
-  }
-
-  /// @brief Writes the specified bits to the register.
-  ///
-  /// @warning If the mask does not fully cover the bits being written, the behaviour is undefined (and an assert will
-  ///          be thrown if enabled). To allow such operations, use the \c safe_write() function instead.
-  template <T mask> auto write(T bits) {
-    rtl::assert(!(bits & ~mask), TRACE("attempted to write bits outside mask specification to mmio register"));
-
-    *reg = bits | (*reg & ~mask);
-  }
-
-  /// @brief Writes the specified bits to the register.
-  ///
-  /// @remarks This function will mask the bits of the argument with the mask prior to writing them. If you know that
-  ///          the argument is fully covered by the mask already, call \c write() directly to avoid this overhead.
-  template <T mask> auto safe_write(T bits) {
-    *reg = (bits & mask) | (*reg & ~mask);
-  }
-
-  /// @brief Overwrites the entire register with the specified bits.
-  auto write(T bits) {
-    *reg = bits;
-  }
-
-  /// @brief Reads out the register's bits.
-  template <T mask = all_bits> auto read() const {
-    return *reg & mask;
-  }
-
-  /// @brief Returns whether any of the bits in the mask are set.
-  template <T mask = all_bits> auto any() const {
-    return (*reg & mask) != 0;
-  }
-
-  /// @brief Returns whether all of the bits in the mask are set.
-  template <T mask = all_bits> auto all() const {
-    return (*reg & mask) == mask;
-  }
-
-  /// @brief Returns whether none of the bits in the mask are set.
-  template <T mask = all_bits> auto none() const {
-    return (*reg & mask) == 0;
-  }
-
-  /// @brief Clears the given bit in the register.
-  template <std::size_t bit> auto clear_bit() {
-    static_assert(bit < sizeof(T) * 8, "bit out of range");
-    clear<1 << bit>();
-  }
-
-  /// @brief Sets the given bit in the register.
-  template <std::size_t bit> auto set_bit() {
-    static_assert(bit < sizeof(T) * 8, "bit out of range");
-    set<1 << bit>();
-  }
-
-  /// @brief Toggles the given bit in the register.
-  template <std::size_t bit> auto toggle_bit() {
-    static_assert(bit < sizeof(T) * 8, "bit out of range");
-    toggle<1 << bit>();
-  }
-
-  /// @brief Reads the given bit in the register.
-  template <std::size_t bit> auto read_bit() const {
-    static_assert(bit < sizeof(T) * 8, "bit out of range");
-    return all<1 << bit>();
-  }
-
-private:
-  volatile T* reg;
-};
-
-/// @brief A read-only version of mmio. You can still access the write methods explicitly.
-template <typename T> struct mmio_ro : public mmio<T> {
-  using mmio<T>::mmio;
-
-  template <T mask> auto clear()                      = delete;
-  auto clear()                                        = delete;
-  template <T mask> auto set()                        = delete;
-  auto set()                                          = delete;
-  template <T mask = mmio<T>::all_bits> auto toggle() = delete;
-  template <T mask> auto write(T bits)                = delete;
-  template <T mask> auto safe_write(T bits)           = delete;
-  auto write(T bits)                                  = delete;
-  template <std::size_t bit> auto clear_bit()         = delete;
-  template <std::size_t bit> auto toggle_bit()        = delete;
-  template <std::size_t bit> auto set_bit()           = delete;
-};
-
-/// @brief A write-only version of mmio. You can still access the read methods explicitly.
-template <typename T> struct mmio_wo : public mmio<T> {
-  using mmio<T>::mmio;
-
-  template <T mask = mmio<T>::all_bits> auto read() const = delete;
-  template <T mask = mmio<T>::all_bits> auto any() const  = delete;
-  template <T mask = mmio<T>::all_bits> auto all() const  = delete;
-  template <T mask = mmio<T>::all_bits> auto none() const = delete;
-  template <std::size_t bit> auto read_bit() const        = delete;
-};
-
-/// @brief Alias of mmio for consistency with mmio_ro and mmio_wo.
-template <typename T> using mmio_rw = mmio<T>;
+/// @brief Shortland alias of mmio_rw.
+template <rtl::uptr address, typename T> using mmio = mmio_rw<address, T>;
 
 }

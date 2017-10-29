@@ -6,9 +6,9 @@ namespace hal::lpc1100
 {
 
 static reset_context determine_reset_event() {
-  auto reset_status = rtl::mmio<rtl::u32>(0x40048030);
-  auto reset_bits = reset_status.template read<0b11111>();
-  reset_status.template set<0b11111>();
+  using reset_status = rtl::mmio<0x40048030, rtl::u32>;
+  auto reset_bits = reset_status::read<0b11111>();
+  reset_status::set<0b11111>();
 
    if (reset_bits & (1 << 0)) {
      return reset_context{reset_event::power_on, {}};
